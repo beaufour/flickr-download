@@ -1,4 +1,4 @@
-Simple script to download a Flickr set:
+Simple script to download a [Flickr](http://flickr.com) set:
 
     flickr_download -k <api key> -s <api secret> -d <set id>
 
