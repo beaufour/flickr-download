@@ -13,4 +13,4 @@ Requirements
 
 * [argparse](http://docs.python.org/2.7/library/argparse.html) (Python 2.7+)
 * [Python Dateutil](http://labix.org/python-dateutil)
-* [Pytnon Flickr API](https://github.com/alexis-mignon/python-flickr-api/)
+* [Python Flickr API](https://github.com/alexis-mignon/python-flickr-api/)
