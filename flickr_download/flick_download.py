@@ -61,8 +61,11 @@ def print_sets(username):
     """
     user = Flickr.Person.findByUserName(username)
     photosets = user.getPhotosets()
+    sets_ids = {}
     for photo in photosets:
         print '{0} - {1}'.format(photo.id, photo.title)
+        sets_ids[photo.id] = photo.title
+    return sets_ids
 
 
 def main():
@@ -71,10 +74,13 @@ def main():
                         help='Flickr API key')
     parser.add_argument('-s', '--api_secret', type=str, required=True,
                         help='Flickr API secret')
+
     parser.add_argument('-l', '--list', type=str, metavar='USER',
                         help='List photosets for a user')
     parser.add_argument('-d', '--download', type=str, metavar='SET_ID',
                         help='Download the given set')
+    parser.add_argument('-u', '--user', type=str, metavar='USERNAME',
+                        help='Download a given user')
 
     args = parser.parse_args()
     init(args.api_key, args.api_secret)
@@ -82,6 +88,15 @@ def main():
         print_sets(args.list)
     elif args.download:
         download_set(args.download)
+    elif args.user:
+        sets_ids = print_sets(args.user)
+        for i in sets_ids:
+            dirname = sets_ids[i]
+            os.mkdir(dirname)
+            os.chdir(dirname)
+            print 'Current directory: ./%s' % dirname
+            download_set(i)
+            os.chdir('../') # get back Jojo
     else:
         print >> sys.stderr, 'ERROR: Must pass either --list or --download\n'
         parser.print_help()
