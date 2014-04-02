@@ -16,7 +16,7 @@ setup(name='flickr_download',
       packages=['flickr_download'],
       install_requires=[
           'flickr_api',
-          'python-dateutil',
+          'python-dateutil == 1.5',
       ],
       entry_points={
           'console_scripts': ['flickr_download=flickr_download.flick_download:main'],
