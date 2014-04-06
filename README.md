@@ -8,6 +8,11 @@ It can also list the set ids for a given user:
 
 Get your [Flickr API key](http://www.flickr.com/services/api/).
 
+You can also set your API key and secret in `~/.flickr_download`:
+
+    api_key: my_key
+    api_secret: my_secret
+
 Requirements
 ============
 
