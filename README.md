@@ -13,6 +13,14 @@ You can also set your API key and secret in `~/.flickr_download`:
     api_key: my_key
     api_secret: my_secret
 
+User Authentication Support
+===========================
+
+The script also allows you to authenticate as your user account. That way you can download sets that
+are private and public photos that are restricted. To use this mode, pass in `-t` to the script too.
+
+The setup the first time is slightly hacky, but it works :)
+
 Requirements
 ============
 

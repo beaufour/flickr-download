@@ -17,9 +17,10 @@ from dateutil import parser
 import yaml
 
 CONFIG_FILE = "~/.flickr_download"
+OAUTH_TOKEN_FILE = "~/.flickr_token"
 
 
-def _init(key, secret):
+def _init(key, secret, oauth):
     """
     Initialize API.
 
@@ -29,6 +30,27 @@ def _init(key, secret):
     @param secret: str, API secret
     """
     Flickr.set_keys(key, secret)
+    if not oauth:
+        return True
+
+    if os.path.exists(os.path.expanduser(OAUTH_TOKEN_FILE)):
+        Flickr.set_auth_handler(os.path.expanduser(OAUTH_TOKEN_FILE))
+        return True
+
+    # Get new OAuth credentials
+    auth = Flickr.auth.AuthHandler()  # creates the AuthHandler object
+    perms = "read"  # set the required permissions
+    url = auth.get_authorization_url(perms)
+    print
+    print "Enter the following url in a browser to authorize the application:"
+    print url
+    print "Copy and paste the <oauth_verifier> value from XML here and press return:"
+    Flickr.set_auth_handler(auth)
+    token = raw_input()
+    auth.set_verifier(token)
+    auth.save(os.path.expanduser(OAUTH_TOKEN_FILE))
+    print "OAuth token was saved, re-run script to use it."
+    return False
 
 
 def _load_defaults():
@@ -99,6 +121,8 @@ def main():
                         help='Flickr API key')
     parser.add_argument('-s', '--api_secret', type=str,
                         help='Flickr API secret')
+    parser.add_argument('-t', '--user_auth', action='store_true',
+                        help='Enable user authentication')
     parser.add_argument('-l', '--list', type=str, metavar='USER',
                         help='List photosets for a user')
     parser.add_argument('-d', '--download', type=str, metavar='SET_ID',
@@ -106,11 +130,15 @@ def main():
     parser.set_defaults(**_load_defaults())
 
     args = parser.parse_args()
+
     if not args.api_key or not args.api_secret:
         print >> sys.stderr, 'You need to pass in both "api_key" and "api_secret" arguments'
         return 1
 
-    _init(args.api_key, args.api_secret)
+    ret = _init(args.api_key, args.api_secret, args.user_auth)
+    if not ret:
+        return 1
+
     if args.list:
         print_sets(args.list)
     elif args.download:

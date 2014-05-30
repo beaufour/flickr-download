@@ -6,12 +6,12 @@ def readme():
         return f.read()
 
 setup(name='flickr_download',
-      version='0.2.2',
+      version='0.2.3',
       description='Download a Flickr set',
       long_description=readme(),
       url='https://github.com/beaufour/flickr-download.git',
-      author='Allan Beaufour',
-      author_email='allan@beaufour.dk',
+      author='Allan Beaufour, Marian Such',
+      author_email='allan@beaufour.dk, toxygen1@gmail.com',
       license='MIT',
       packages=['flickr_download'],
       install_requires=[
