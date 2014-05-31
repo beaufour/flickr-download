@@ -45,7 +45,9 @@ def _init(key, secret, oauth):
             token = raw_input()
             a.set_verifier(token)
             a.save(os.path.expanduser(TOKEN_FILE))
-
+            print "OAuth token was saved, re-run script to use it."
+            sys.exit(0)
+            
 def _load_defaults():
     """
     Load default parameters from config file
