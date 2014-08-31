@@ -1,3 +1,9 @@
+This fork includes support for the authentication token which extends privileges to some restricted photos.
+
+Use -t flag to turn on OAuth authentication:
+
+    flickr_download -t -k <api key> -s <api secret> -d <set id>
+
 Simple script to download a [Flickr](http://flickr.com) set:
 
     flickr_download -k <api key> -s <api secret> -d <set id>

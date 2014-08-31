@@ -17,9 +17,9 @@ from dateutil import parser
 import yaml
 
 CONFIG_FILE = "~/.flickr_download"
-
-
-def _init(key, secret):
+TOKEN_FILE= "~/.flickr_token"
+    
+def _init(key, secret, oauth):
     """
     Initialize API.
 
@@ -29,8 +29,25 @@ def _init(key, secret):
     @param secret: str, API secret
     """
     Flickr.set_keys(key, secret)
-
-
+    
+    if oauth:
+    	if os.path.exists(os.path.expanduser(TOKEN_FILE)):
+            Flickr.set_auth_handler(os.path.expanduser(TOKEN_FILE))
+        else:
+            a = Flickr.auth.AuthHandler() #creates the AuthHandler object
+            perms = "read" # set the required permissions
+            url = a.get_authorization_url(perms)
+            print
+            print "Enter following url to the browser to authorize application"
+            print url
+            print "Copy paste <oauth_verifier> value from xml and press return"
+            Flickr.set_auth_handler(a)
+            token = raw_input()
+            a.set_verifier(token)
+            a.save(os.path.expanduser(TOKEN_FILE))
+            print "OAuth token was saved, re-run script to use it."
+            sys.exit(0)
+            
 def _load_defaults():
     """
     Load default parameters from config file
@@ -99,18 +116,21 @@ def main():
                         help='Flickr API key')
     parser.add_argument('-s', '--api_secret', type=str,
                         help='Flickr API secret')
+    parser.add_argument('-t', '--api_token', action='store_true',
+						help='Use OAuth token')
     parser.add_argument('-l', '--list', type=str, metavar='USER',
                         help='List photosets for a user')
     parser.add_argument('-d', '--download', type=str, metavar='SET_ID',
                         help='Download the given set')
     parser.set_defaults(**_load_defaults())
-
+    
     args = parser.parse_args()
+
     if not args.api_key or not args.api_secret:
         print >> sys.stderr, 'You need to pass in both "api_key" and "api_secret" arguments'
         return 1
-
-    _init(args.api_key, args.api_secret)
+ 
+    _init(args.api_key, args.api_secret, args.api_token)
     if args.list:
         print_sets(args.list)
     elif args.download:
