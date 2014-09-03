@@ -13,6 +13,7 @@ import sys
 import time
 
 import flickr_api as Flickr
+from flickr_api.flickrerrors import FlickrAPIError
 from dateutil import parser
 import yaml
 
@@ -91,9 +92,12 @@ def download_set(set_id, size_label=None):
         try:
             page = pset.getPhotos(page=pagenum)
             photos.extend(page)
-            pagenum+=1
-        except:
-            break
+            pagenum += 1
+        except FlickrAPIError as ex:
+            if ex.code == 1:
+                break
+            else:
+                raise ex
     if not os.path.exists(pset.title):
        os.mkdir(pset.title)
     for photo in photos:
