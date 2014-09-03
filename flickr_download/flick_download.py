@@ -83,10 +83,21 @@ def download_set(set_id, size_label=None):
     @param set_id: str, id of the photo set
     @param size_label: str|None, size to download (or None for largest available)
     """
+    suffix = " ({})".format(size_label) if size_label else ""
     pset = Flickr.Photoset(id=set_id)
     photos = pset.getPhotos()
+    pagenum = 2
+    while True:
+        try:
+            page = pset.getPhotos(page=pagenum)
+            photos.extend(page)
+            pagenum+=1
+        except:
+            break
+    if not os.path.exists(pset.title):
+       os.mkdir(pset.title)
     for photo in photos:
-        fname = '{0}.jpg'.format(photo.id)
+        fname = '{0}/{1}{2}.jpg'.format(pset.title, photo.title, suffix)
         if os.path.exists(fname):
             # TODO: Ideally we should check for file size / md5 here
             # to handle failed downloads.
@@ -127,6 +138,8 @@ def main():
                         help='List photosets for a user')
     parser.add_argument('-d', '--download', type=str, metavar='SET_ID',
                         help='Download the given set')
+    parser.add_argument('-q', '--quality', type=str, metavar='SIZE_LABEL',
+                        default=None, help='Quality of the picture')
     parser.set_defaults(**_load_defaults())
 
     args = parser.parse_args()
@@ -142,7 +155,7 @@ def main():
     if args.list:
         print_sets(args.list)
     elif args.download:
-        download_set(args.download)
+        download_set(args.download, args.quality)
     else:
         print >> sys.stderr, 'ERROR: Must pass either --list or --download\n'
         parser.print_help()
