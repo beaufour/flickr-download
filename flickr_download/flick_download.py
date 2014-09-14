@@ -96,8 +96,8 @@ def download_set(set_id, size_label=None):
         except FlickrAPIError as ex:
             if ex.code == 1:
                 break
-            else:
-                raise ex
+            raise
+
     if not os.path.exists(pset.title):
        os.mkdir(pset.title)
     for photo in photos:
