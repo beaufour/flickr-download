@@ -77,7 +77,7 @@ def _load_defaults():
     return {}
 
 
-def download_set(set_id, size_label=None, naming='append'):
+def download_set(set_id, size_label=None, naming=None):
     """
     Download the set with 'set_id' to the current directory.
 
