@@ -77,12 +77,13 @@ def _load_defaults():
     return {}
 
 
-def download_set(set_id, size_label=None):
+def download_set(set_id, size_label=None, naming='append'):
     """
     Download the set with 'set_id' to the current directory.
 
     @param set_id: str, id of the photo set
     @param size_label: str|None, size to download (or None for largest available)
+    @param naming: str|append, photo naming strategy
     """
     suffix = " ({})".format(size_label) if size_label else ""
     pset = Flickr.Photoset(id=set_id)
@@ -100,8 +101,26 @@ def download_set(set_id, size_label=None):
 
     if not os.path.exists(pset.title):
        os.mkdir(pset.title)
+
+    # Stores in a dictionary the photo titles already found and their count,
+    # if the --naming argument was set to 'increment'
+    duplicates = {}
     for photo in photos:
-        fname = '{0}/{1}{2}.jpg'.format(pset.title, photo.title, suffix)
+        if naming == 'append':
+            fname = '{0}/{1}-{2}{3}.jpg'.format(pset.title, photo.title, photo.id, suffix)
+        elif naming == 'replace':
+            fname = '{0}/{1}{2}.jpg'.format(pset.title, photo.id, suffix)
+        elif naming == 'increment':
+            if duplicates.has_key(photo.title):
+                extra = '(' + str(duplicates[photo.title]) + ')'
+                duplicates[photo.title] += 1
+            else:
+                extra = ''
+                duplicates[photo.title] = 1
+            fname = '{0}/{1}{2}{3}.jpg'.format(pset.title, photo.title, suffix, extra)
+        else:
+            fname = '{0}/{1}{2}.jpg'.format(pset.title, photo.title, suffix)
+
         if os.path.exists(fname):
             # TODO: Ideally we should check for file size / md5 here
             # to handle failed downloads.
@@ -144,6 +163,8 @@ def main():
                         help='Download the given set')
     parser.add_argument('-q', '--quality', type=str, metavar='SIZE_LABEL',
                         default=None, help='Quality of the picture')
+    parser.add_argument('-n', '--naming', type=str, metavar='RENAME_MODE',
+                        default=None, help='Photo naming')
     parser.set_defaults(**_load_defaults())
 
     args = parser.parse_args()
@@ -159,7 +180,7 @@ def main():
     if args.list:
         print_sets(args.list)
     elif args.download:
-        download_set(args.download, args.quality)
+        download_set(args.download, args.quality, args.naming)
     else:
         print >> sys.stderr, 'ERROR: Must pass either --list or --download\n'
         parser.print_help()
