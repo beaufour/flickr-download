@@ -77,6 +77,18 @@ def _load_defaults():
     return {}
 
 
+def get_filename(pset, photo, suffix):
+    """
+    Create the filename to use for a given photo.
+
+    @param pset: Flickr.Photoset, the photoset
+    @param photo: Flickr.Photo, the photo
+    @param suffice: str, optional suffix
+    @return: str, the filename
+    """
+    return '{0}{1}.jpg'.format(photo.title, suffix)
+
+
 def download_set(set_id, size_label=None):
     """
     Download the set with 'set_id' to the current directory.
@@ -100,8 +112,9 @@ def download_set(set_id, size_label=None):
 
     if not os.path.exists(pset.title):
         os.mkdir(pset.title)
+
     for photo in photos:
-        fname = '{0}/{1}{2}.jpg'.format(pset.title, photo.title, suffix)
+        fname = '{0}/{1}'.format(pset.title, get_filename(pset, photo, suffix))
         if os.path.exists(fname):
             # TODO: Ideally we should check for file size / md5 here
             # to handle failed downloads.
