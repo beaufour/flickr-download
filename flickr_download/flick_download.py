@@ -17,6 +17,8 @@ from flickr_api.flickrerrors import FlickrAPIError
 from dateutil import parser
 import yaml
 
+from flickr_download.filename_handlers import get_filename_handler
+
 CONFIG_FILE = "~/.flickr_download"
 OAUTH_TOKEN_FILE = "~/.flickr_token"
 
@@ -77,23 +79,12 @@ def _load_defaults():
     return {}
 
 
-def get_filename(pset, photo, suffix):
-    """
-    Create the filename to use for a given photo.
-
-    @param pset: Flickr.Photoset, the photoset
-    @param photo: Flickr.Photo, the photo
-    @param suffice: str, optional suffix
-    @return: str, the filename
-    """
-    return '{0}{1}.jpg'.format(photo.title, suffix)
-
-
-def download_set(set_id, size_label=None):
+def download_set(set_id, get_filename, size_label=None):
     """
     Download the set with 'set_id' to the current directory.
 
     @param set_id: str, id of the photo set
+    @param get_filename: Function, function that creates a filename for the photo
     @param size_label: str|None, size to download (or None for largest available)
     """
     suffix = " ({})".format(size_label) if size_label else ""
@@ -157,6 +148,8 @@ def main():
                         help='Download the given set')
     parser.add_argument('-q', '--quality', type=str, metavar='SIZE_LABEL',
                         default=None, help='Quality of the picture')
+    parser.add_argument('-n', '--naming', type=str, metavar='NAMING_MODE',
+                        default='title', help='Photo naming mode')
     parser.set_defaults(**_load_defaults())
 
     args = parser.parse_args()
@@ -173,7 +166,8 @@ def main():
         print_sets(args.list)
     elif args.download:
         try:
-            download_set(args.download, args.quality)
+            get_filename = get_filename_handler(args.naming)
+            download_set(args.download, get_filename, args.quality)
         except KeyboardInterrupt:
             print >> sys.stderr, 'Forcefully aborting. Last photo download might be partial :('
     else:
