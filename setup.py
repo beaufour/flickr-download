@@ -19,6 +19,11 @@ setup(name='flickr_download',
           'python-dateutil == 1.5',
           'PyYAML==3.11',
       ],
+      test_suite='tests.get_tests',
+      tests_require=[
+          'unittest2==0.8.0',
+          'attrdict==0.5.1',
+      ],
       entry_points={
           'console_scripts': ['flickr_download=flickr_download.flick_download:main'],
       },
