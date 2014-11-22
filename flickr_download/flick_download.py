@@ -99,7 +99,7 @@ def download_set(set_id, size_label=None):
             raise
 
     if not os.path.exists(pset.title):
-       os.mkdir(pset.title)
+        os.mkdir(pset.title)
     for photo in photos:
         fname = '{0}/{1}{2}.jpg'.format(pset.title, photo.title, suffix)
         if os.path.exists(fname):
