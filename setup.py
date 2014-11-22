@@ -12,7 +12,7 @@ setup(name='flickr_download',
       url='https://github.com/beaufour/flickr-download.git',
       author='Allan Beaufour, Marian Such',
       author_email='allan@beaufour.dk, toxygen1@gmail.com',
-      license='MIT',
+      license='Apache',
       packages=['flickr_download'],
       install_requires=[
           'flickr_api==0.5',
