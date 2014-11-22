@@ -159,7 +159,10 @@ def main():
     if args.list:
         print_sets(args.list)
     elif args.download:
-        download_set(args.download, args.quality)
+        try:
+            download_set(args.download, args.quality)
+        except KeyboardInterrupt:
+            print >> sys.stderr, 'Forcefully aborting. Last photo download might be partial :('
     else:
         print >> sys.stderr, 'ERROR: Must pass either --list or --download\n'
         parser.print_help()
