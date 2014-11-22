@@ -4,6 +4,8 @@
 #
 
 from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 from __future__ import unicode_literals
 import argparse
 import errno
@@ -45,14 +47,14 @@ def _init(key, secret, oauth):
     perms = "read"  # set the required permissions
     url = auth.get_authorization_url(perms)
     print
-    print "Enter the following url in a browser to authorize the application:"
-    print url
-    print "Copy and paste the <oauth_verifier> value from XML here and press return:"
+    print("\nEnter the following url in a browser to authorize the application:")
+    print(url)
+    print("Copy and paste the <oauth_verifier> value from XML here and press return:")
     Flickr.set_auth_handler(auth)
     token = raw_input()
     auth.set_verifier(token)
     auth.save(os.path.expanduser(OAUTH_TOKEN_FILE))
-    print "OAuth token was saved, re-run script to use it."
+    print("OAuth token was saved, re-run script to use it.")
     return False
 
 
@@ -109,10 +111,10 @@ def download_set(set_id, get_filename, size_label=None):
         if os.path.exists(fname):
             # TODO: Ideally we should check for file size / md5 here
             # to handle failed downloads.
-            print 'Skipping {0}, as it exists already'.format(fname)
+            print('Skipping {0}, as it exists already'.format(fname))
             continue
 
-        print 'Saving: {0}'.format(fname)
+        print('Saving: {0}'.format(fname))
         photo.save(fname, size_label)
 
         # Set file times to when the photo was taken
@@ -145,7 +147,7 @@ def print_sets(username):
     user = Flickr.Person.findByUserName(username)
     photosets = user.getPhotosets()
     for photo in photosets:
-        print '{0} - {1}'.format(photo.id, photo.title)
+        print('{0} - {1}'.format(photo.id, photo.title))
 
 
 def main():
@@ -171,7 +173,7 @@ def main():
     args = parser.parse_args()
 
     if not args.api_key or not args.api_secret:
-        print >> sys.stderr, 'You need to pass in both "api_key" and "api_secret" arguments'
+        print ('You need to pass in both "api_key" and "api_secret" arguments', file=sys.stderr)
         return 1
 
     ret = _init(args.api_key, args.api_secret, args.user_auth)
@@ -188,9 +190,9 @@ def main():
             else:
                 download_user(args.download_user, get_filename, args.quality)
         except KeyboardInterrupt:
-            print >> sys.stderr, 'Forcefully aborting. Last photo download might be partial :('
+            print('Forcefully aborting. Last photo download might be partial :(', file=sys.stderr)
     else:
-        print >> sys.stderr, 'ERROR: Must pass either --list or --download\n'
+        print('ERROR: Must pass either --list or --download\n', file=sys.stderr)
         parser.print_help()
         return 1
 
