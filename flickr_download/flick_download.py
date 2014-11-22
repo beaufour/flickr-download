@@ -122,6 +122,20 @@ def download_set(set_id, get_filename, size_label=None):
         os.utime(fname, (taken_unix, taken_unix))
 
 
+def download_user(username, get_filename, size_label):
+    """
+    Download all the sets owned by the given user.
+
+    @param username: str, username
+    @param get_filename: Function, function that creates a filename for the photo
+    @param size_label: str|None, size to download (or None for largest available)
+    """
+    user = Flickr.Person.findByUserName(username)
+    photosets = user.getPhotosets()
+    for photoset in photosets:
+        download_set(photoset.id, get_filename, size_label)
+
+
 def print_sets(username):
     """
     Print all sets for the given user
@@ -146,6 +160,8 @@ def main():
                         help='List photosets for a user')
     parser.add_argument('-d', '--download', type=str, metavar='SET_ID',
                         help='Download the given set')
+    parser.add_argument('-u', '--download_user', type=str, metavar='USERNAME',
+                        help='Download all sets for a given user')
     parser.add_argument('-q', '--quality', type=str, metavar='SIZE_LABEL',
                         default=None, help='Quality of the picture')
     parser.add_argument('-n', '--naming', type=str, metavar='NAMING_MODE',
@@ -164,10 +180,13 @@ def main():
 
     if args.list:
         print_sets(args.list)
-    elif args.download:
+    elif args.download or args.download_user:
         try:
             get_filename = get_filename_handler(args.naming)
-            download_set(args.download, get_filename, args.quality)
+            if args.download:
+                download_set(args.download, get_filename, args.quality)
+            else:
+                download_user(args.download_user, get_filename, args.quality)
         except KeyboardInterrupt:
             print >> sys.stderr, 'Forcefully aborting. Last photo download might be partial :('
     else:
