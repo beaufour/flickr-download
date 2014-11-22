@@ -1,3 +1,6 @@
+Introduction
+============
+
 Simple script to download a [Flickr](http://flickr.com) set:
 
     flickr_download -k <api key> -s <api secret> -d <set id>
@@ -12,6 +15,10 @@ You can also set your API key and secret in `~/.flickr_download`:
 
     api_key: my_key
     api_secret: my_secret
+
+
+[![Build Status](https://travis-ci.org/beaufour/flickr-download.svg)](https://travis-ci.org/beaufour/flickr-download)
+
 
 User Authentication Support
 ===========================
