@@ -20,6 +20,7 @@ from dateutil import parser
 import yaml
 
 from flickr_download.filename_handlers import get_filename_handler
+from flickr_download.utils import get_full_path
 
 CONFIG_FILE = "~/.flickr_download"
 OAUTH_TOKEN_FILE = "~/.flickr_token"
@@ -107,7 +108,7 @@ def download_set(set_id, get_filename, size_label=None):
         os.mkdir(pset.title)
 
     for photo in photos:
-        fname = os.path.join(pset.title, get_filename(pset, photo, suffix))
+        fname = get_full_path(pset.title, get_filename(pset, photo, suffix))
         if os.path.exists(fname):
             # TODO: Ideally we should check for file size / md5 here
             # to handle failed downloads.
