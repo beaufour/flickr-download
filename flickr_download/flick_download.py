@@ -11,6 +11,7 @@ import logging
 import os
 import sys
 import time
+import string
 
 import flickr_api as Flickr
 from flickr_api.flickrerrors import FlickrAPIError
@@ -79,6 +80,16 @@ def _load_defaults():
     return {}
 
 
+def validate_filename(filename):
+    """
+    Validate the characters in the filename to avoid things like forward
+    slashes in files.
+    From http://stackoverflow.com/a/295146/322939
+    """
+    valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
+    return ''.join(c for c in filename if c in valid_chars)
+
+
 def download_set(set_id, get_filename, size_label=None):
     """
     Download the set with 'set_id' to the current directory.
@@ -105,21 +116,23 @@ def download_set(set_id, get_filename, size_label=None):
         os.mkdir(pset.title)
 
     for photo in photos:
-        fname = '{0}/{1}'.format(pset.title, get_filename(pset, photo, suffix))
+        path = pset.title
+        fname = validate_filename(get_filename(pset, photo, suffix))
+        fname_formatted = '{0}/{1}'.format(path, fname)
         if os.path.exists(fname):
             # TODO: Ideally we should check for file size / md5 here
             # to handle failed downloads.
             print 'Skipping {0}, as it exists already'.format(fname)
             continue
 
-        print 'Saving: {0}'.format(fname)
-        photo.save(fname, size_label)
+        print 'Saving: {0}'.format(fname_formatted)
+        photo.save(os.path.join(path, fname),  size_label)
 
         # Set file times to when the photo was taken
         info = photo.getInfo()
         taken = parser.parse(info['taken'])
         taken_unix = time.mktime(taken.timetuple())
-        os.utime(fname, (taken_unix, taken_unix))
+        os.utime(fname_formatted, (taken_unix, taken_unix))
 
 
 def download_user(username, get_filename, size_label):
