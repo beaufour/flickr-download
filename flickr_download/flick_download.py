@@ -107,7 +107,7 @@ def download_set(set_id, get_filename, size_label=None):
         os.mkdir(pset.title)
 
     for photo in photos:
-        fname = '{0}/{1}'.format(pset.title, get_filename(pset, photo, suffix))
+        fname = os.path.join(pset.title, get_filename(pset, photo, suffix))
         if os.path.exists(fname):
             # TODO: Ideally we should check for file size / md5 here
             # to handle failed downloads.
