@@ -7,6 +7,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 from collections import defaultdict
+from dateutil import parser
 
 
 def title(pset, photo, suffix):
@@ -84,3 +85,13 @@ def get_filename_handler(name='title'):
     @return: Function, handler
     """
     return HANDLERS[name]
+
+
+def get_foldername(photo, pattern):
+    """
+    Returns date based foldername
+    """
+    info = photo.getInfo()
+    taken = parser.parse(info['taken'])
+    foldername = taken.strftime(pattern)
+    return foldername

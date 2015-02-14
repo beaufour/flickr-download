@@ -19,7 +19,7 @@ from flickr_api.flickrerrors import FlickrAPIError
 from dateutil import parser
 import yaml
 
-from flickr_download.filename_handlers import get_filename_handler
+from flickr_download.filename_handlers import get_filename_handler, get_foldername
 from flickr_download.utils import get_full_path
 
 CONFIG_FILE = "~/.flickr_download"
@@ -82,7 +82,7 @@ def _load_defaults():
     return {}
 
 
-def download_set(set_id, get_filename, size_label=None):
+def download_set(set_id, get_filename, size_label=None, folder_naming=None):
     """
     Download the set with 'set_id' to the current directory.
 
@@ -104,11 +104,20 @@ def download_set(set_id, get_filename, size_label=None):
                 break
             raise
 
-    if not os.path.exists(pset.title):
-        os.mkdir(pset.title)
-
     for photo in photos:
-        fname = get_full_path(pset.title, get_filename(pset, photo, suffix))
+
+        if folder_naming:
+            fname = os.path.join(
+                get_foldername(photo, folder_naming),
+                get_filename(pset, photo, suffix)
+            )
+        else:
+            fname = get_full_path(pset.title, get_filename(pset, photo, suffix))
+
+        if not os.path.exists(os.path.dirname(fname)):
+            # print(os.path.dirname(fname))
+            os.makedirs(os.path.dirname(fname))
+
         if os.path.exists(fname):
             # TODO: Ideally we should check for file size / md5 here
             # to handle failed downloads.
@@ -169,6 +178,8 @@ def main():
                         default=None, help='Quality of the picture')
     parser.add_argument('-n', '--naming', type=str, metavar='NAMING_MODE',
                         default='title', help='Photo naming mode')
+    parser.add_argument('-f', '--folder_naming', type=str, metavar='FOLDER_NAMING',
+                        default='%Y/%m/%d', help='Photo folder naming')
     parser.set_defaults(**_load_defaults())
 
     args = parser.parse_args()
@@ -187,9 +198,9 @@ def main():
         try:
             get_filename = get_filename_handler(args.naming)
             if args.download:
-                download_set(args.download, get_filename, args.quality)
+                download_set(args.download, get_filename, args.quality, args.folder_naming)
             else:
-                download_user(args.download_user, get_filename, args.quality)
+                download_user(args.download_user, get_filename, args.quality, args.folder_naming)
         except KeyboardInterrupt:
             print('Forcefully aborting. Last photo download might be partial :(', file=sys.stderr)
     else:
