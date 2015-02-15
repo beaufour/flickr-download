@@ -182,7 +182,7 @@ def main():
     parser.add_argument('-f', '--folder_naming', type=str, metavar='FOLDER_NAMING',
                         default='%Y/%m/%d', help='Photo folder naming')
     parser.add_argument('-ft', '--file_times', type=str, metavar='FILE_TIMES',
-                        default='%Y/%m/%d', help='Set file timestamp to photo taken timestamp')
+                        default=False, help='Set file timestamp to photo taken timestamp')
     parser.set_defaults(**_load_defaults())
 
     args = parser.parse_args()
