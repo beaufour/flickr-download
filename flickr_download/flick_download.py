@@ -82,7 +82,7 @@ def _load_defaults():
     return {}
 
 
-def download_set(set_id, get_filename, size_label=None, folder_naming=None):
+def download_set(set_id, get_filename, size_label=None, folder_naming=None, file_times=False):
     """
     Download the set with 'set_id' to the current directory.
 
@@ -128,13 +128,14 @@ def download_set(set_id, get_filename, size_label=None, folder_naming=None):
         photo.save(fname, size_label)
 
         # Set file times to when the photo was taken
-        info = photo.getInfo()
-        taken = parser.parse(info['taken'])
-        taken_unix = time.mktime(taken.timetuple())
-        os.utime(fname, (taken_unix, taken_unix))
+        if file_times:
+            info = photo.getInfo()
+            taken = parser.parse(info['taken'])
+            taken_unix = time.mktime(taken.timetuple())
+            os.utime(fname, (taken_unix, taken_unix))
 
 
-def download_user(username, get_filename, size_label):
+def download_user(username, get_filename, size_label, folder_naming, file_times):
     """
     Download all the sets owned by the given user.
 
@@ -145,7 +146,7 @@ def download_user(username, get_filename, size_label):
     user = Flickr.Person.findByUserName(username)
     photosets = user.getPhotosets()
     for photoset in photosets:
-        download_set(photoset.id, get_filename, size_label)
+        download_set(photoset.id, get_filename, size_label, folder_naming, file_times)
 
 
 def print_sets(username):
@@ -180,6 +181,8 @@ def main():
                         default='title', help='Photo naming mode')
     parser.add_argument('-f', '--folder_naming', type=str, metavar='FOLDER_NAMING',
                         default='%Y/%m/%d', help='Photo folder naming')
+    parser.add_argument('-ft', '--file_times', type=str, metavar='FILE_TIMES',
+                        default='%Y/%m/%d', help='Set file timestamp to photo taken timestamp')
     parser.set_defaults(**_load_defaults())
 
     args = parser.parse_args()
@@ -198,9 +201,9 @@ def main():
         try:
             get_filename = get_filename_handler(args.naming)
             if args.download:
-                download_set(args.download, get_filename, args.quality, args.folder_naming)
+                download_set(args.download, get_filename, args.quality, args.folder_naming, args.file_times)
             else:
-                download_user(args.download_user, get_filename, args.quality, args.folder_naming)
+                download_user(args.download_user, get_filename, args.quality, args.folder_naming, args.file_times)
         except KeyboardInterrupt:
             print('Forcefully aborting. Last photo download might be partial :(', file=sys.stderr)
     else:
