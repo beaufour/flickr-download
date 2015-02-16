@@ -115,7 +115,6 @@ def download_set(set_id, get_filename, size_label=None, folder_naming=None, file
             fname = get_full_path(pset.title, get_filename(pset, photo, suffix))
 
         if not os.path.exists(os.path.dirname(fname)):
-            # print(os.path.dirname(fname))
             os.makedirs(os.path.dirname(fname))
 
         if os.path.exists(fname):
