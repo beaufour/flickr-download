@@ -200,9 +200,15 @@ def main():
         try:
             get_filename = get_filename_handler(args.naming)
             if args.download:
-                download_set(args.download, get_filename, args.quality, args.folder_naming, args.file_times)
+                download_set(
+                    args.download, get_filename, args.quality,
+                    args.folder_naming, args.file_times
+                )
             else:
-                download_user(args.download_user, get_filename, args.quality, args.folder_naming, args.file_times)
+                download_user(
+                    args.download_user, get_filename, args.quality,
+                    args.folder_naming, args.file_times
+                )
         except KeyboardInterrupt:
             print('Forcefully aborting. Last photo download might be partial :(', file=sys.stderr)
     else:
