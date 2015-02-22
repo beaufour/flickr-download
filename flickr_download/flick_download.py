@@ -19,7 +19,8 @@ from flickr_api.flickrerrors import FlickrAPIError
 from dateutil import parser
 import yaml
 
-from flickr_download.filename_handlers import get_filename_handler, get_foldername
+from flickr_download.filename_handlers import get_filename_handler
+from flickr_download.utils import get_foldername
 from flickr_download.utils import get_full_path
 
 CONFIG_FILE = "~/.flickr_download"
@@ -82,7 +83,7 @@ def _load_defaults():
     return {}
 
 
-def download_set(set_id, get_filename, size_label=None, folder_naming=None, file_times=False):
+def download_set(set_id, get_filename, size_label=None, folder_naming=None, no_file_times=False):
     """
     Download the set with 'set_id' to the current directory.
 
@@ -127,14 +128,14 @@ def download_set(set_id, get_filename, size_label=None, folder_naming=None, file
         photo.save(fname, size_label)
 
         # Set file times to when the photo was taken
-        if file_times:
+        if not no_file_times:
             info = photo.getInfo()
             taken = parser.parse(info['taken'])
             taken_unix = time.mktime(taken.timetuple())
             os.utime(fname, (taken_unix, taken_unix))
 
 
-def download_user(username, get_filename, size_label, folder_naming, file_times):
+def download_user(username, get_filename, size_label, folder_naming, no_file_times):
     """
     Download all the sets owned by the given user.
 
@@ -145,7 +146,7 @@ def download_user(username, get_filename, size_label, folder_naming, file_times)
     user = Flickr.Person.findByUserName(username)
     photosets = user.getPhotosets()
     for photoset in photosets:
-        download_set(photoset.id, get_filename, size_label, folder_naming, file_times)
+        download_set(photoset.id, get_filename, size_label, folder_naming, no_file_times)
 
 
 def print_sets(username):
@@ -178,10 +179,13 @@ def main():
                         default=None, help='Quality of the picture')
     parser.add_argument('-n', '--naming', type=str, metavar='NAMING_MODE',
                         default='title', help='Photo naming mode')
-    parser.add_argument('-f', '--folder_naming', type=str, metavar='FOLDER_NAMING',
-                        default='%Y/%m/%d', help='Photo folder naming')
-    parser.add_argument('-ft', '--file_times', action='store_true',
-                        default=False, help='Set file timestamp to photo taken timestamp')
+    parser.add_argument('-f', '--folder_naming', type=str, metavar='PATTERN',
+                        help="Place the photo in a folder based on the photo date/time.\
+                        e.g. '%Y/%m/%d' "
+                        )
+    parser.add_argument('-nft', '--no_file_times', action='store_true',
+                        default=False,
+                        help='Do not set file time to time when photo was taken.')
     parser.set_defaults(**_load_defaults())
 
     args = parser.parse_args()
@@ -202,12 +206,12 @@ def main():
             if args.download:
                 download_set(
                     args.download, get_filename, args.quality,
-                    args.folder_naming, args.file_times
+                    args.folder_naming, args.no_file_times
                 )
             else:
                 download_user(
                     args.download_user, get_filename, args.quality,
-                    args.folder_naming, args.file_times
+                    args.folder_naming, args.no_file_times
                 )
         except KeyboardInterrupt:
             print('Forcefully aborting. Last photo download might be partial :(', file=sys.stderr)
