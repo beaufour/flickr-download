@@ -20,6 +20,7 @@ from dateutil import parser
 import yaml
 
 from flickr_download.filename_handlers import get_filename_handler
+from flickr_download.utils import get_foldername
 from flickr_download.utils import get_full_path
 
 CONFIG_FILE = "~/.flickr_download"
@@ -82,7 +83,7 @@ def _load_defaults():
     return {}
 
 
-def download_set(set_id, get_filename, size_label=None):
+def download_set(set_id, get_filename, size_label=None, folder_naming=None, no_file_times=False):
     """
     Download the set with 'set_id' to the current directory.
 
@@ -104,11 +105,19 @@ def download_set(set_id, get_filename, size_label=None):
                 break
             raise
 
-    if not os.path.exists(pset.title):
-        os.mkdir(pset.title)
-
     for photo in photos:
-        fname = get_full_path(pset.title, get_filename(pset, photo, suffix))
+
+        if folder_naming:
+            fname = os.path.join(
+                get_foldername(photo, folder_naming),
+                get_filename(pset, photo, suffix)
+            )
+        else:
+            fname = get_full_path(pset.title, get_filename(pset, photo, suffix))
+
+        if not os.path.exists(os.path.dirname(fname)):
+            os.makedirs(os.path.dirname(fname))
+
         if os.path.exists(fname):
             # TODO: Ideally we should check for file size / md5 here
             # to handle failed downloads.
@@ -119,13 +128,14 @@ def download_set(set_id, get_filename, size_label=None):
         photo.save(fname, size_label)
 
         # Set file times to when the photo was taken
-        info = photo.getInfo()
-        taken = parser.parse(info['taken'])
-        taken_unix = time.mktime(taken.timetuple())
-        os.utime(fname, (taken_unix, taken_unix))
+        if not no_file_times:
+            info = photo.getInfo()
+            taken = parser.parse(info['taken'])
+            taken_unix = time.mktime(taken.timetuple())
+            os.utime(fname, (taken_unix, taken_unix))
 
 
-def download_user(username, get_filename, size_label):
+def download_user(username, get_filename, size_label, folder_naming, no_file_times):
     """
     Download all the sets owned by the given user.
 
@@ -136,7 +146,7 @@ def download_user(username, get_filename, size_label):
     user = Flickr.Person.findByUserName(username)
     photosets = user.getPhotosets()
     for photoset in photosets:
-        download_set(photoset.id, get_filename, size_label)
+        download_set(photoset.id, get_filename, size_label, folder_naming, no_file_times)
 
 
 def print_sets(username):
@@ -169,6 +179,13 @@ def main():
                         default=None, help='Quality of the picture')
     parser.add_argument('-n', '--naming', type=str, metavar='NAMING_MODE',
                         default='title', help='Photo naming mode')
+    parser.add_argument('-f', '--folder_naming', type=str, metavar='PATTERN',
+                        help="Place the photo in a folder based on the photo date/time.\
+                        e.g. '%Y/%m/%d' "
+                        )
+    parser.add_argument('-nft', '--no_file_times', action='store_true',
+                        default=False,
+                        help='Do not set file time to time when photo was taken.')
     parser.set_defaults(**_load_defaults())
 
     args = parser.parse_args()
@@ -187,9 +204,15 @@ def main():
         try:
             get_filename = get_filename_handler(args.naming)
             if args.download:
-                download_set(args.download, get_filename, args.quality)
+                download_set(
+                    args.download, get_filename, args.quality,
+                    args.folder_naming, args.no_file_times
+                )
             else:
-                download_user(args.download_user, get_filename, args.quality)
+                download_user(
+                    args.download_user, get_filename, args.quality,
+                    args.folder_naming, args.no_file_times
+                )
         except KeyboardInterrupt:
             print('Forcefully aborting. Last photo download might be partial :(', file=sys.stderr)
     else:

@@ -18,7 +18,9 @@ def title(pset, photo, suffix):
     @param suffice: str, optional suffix
     @return: str, the filename
     """
-    return '{0}{1}.jpg'.format(photo.title, suffix)
+    if photo.title:
+        return '{0}{1}.jpg'.format(photo.title, suffix)
+    return idd(pset, photo, suffix)
 
 
 def idd(pset, photo, suffix):
