@@ -6,7 +6,7 @@ def readme():
         return f.read()
 
 setup(name='flickr_download',
-      version='0.2.8',
+      version='0.2.9',
       description='Download a Flickr set',
       long_description=readme(),
       url='https://github.com/beaufour/flickr-download.git',
