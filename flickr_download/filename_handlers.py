@@ -11,13 +11,16 @@ from collections import defaultdict
 
 def title(pset, photo, suffix):
     """
-    Name file after title.
+    Name file after title. Falls back to photo id.
 
     @param pset: Flickr.Photoset, the photoset
     @param photo: Flickr.Photo, the photo
     @param suffice: str, optional suffix
     @return: str, the filename
     """
+    if not photo.title:
+        return idd(pset, photo, suffix)
+
     return '{0}{1}.jpg'.format(photo.title, suffix)
 
 

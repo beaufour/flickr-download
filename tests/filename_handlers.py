@@ -16,6 +16,12 @@ class TestFilenameHandlers(unittest.TestCase):
         self.assertEqual(fn(self._pset, self._photo, self._suffix),
                          'Some Photo.jpg')
 
+    def test_empty_title(self):
+        photo = AttrDict({'title': '', 'id': 192})
+        fn = get_filename_handler('title')
+        self.assertEqual(fn(self._pset, photo, self._suffix),
+                         '192.jpg')
+
     def test_title_and_id(self):
         fn = get_filename_handler('title_and_id')
         self.assertEqual(fn(self._pset, self._photo, self._suffix),
