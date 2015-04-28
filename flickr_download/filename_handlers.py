@@ -45,6 +45,9 @@ def title_and_id(pset, photo, suffix):
     @param suffice: str, optional suffix
     @return: str, the filename
     """
+    if not photo.title:
+        return idd(pset, photo, suffix)
+
     return '{0}-{1}{2}.jpg'.format(photo.title, photo.id, suffix)
 
 
@@ -61,6 +64,9 @@ def title_increment(pset, photo, suffix):
     @param suffice: str, optional suffix
     @return: str, the filename
     """
+    if not photo.title:
+        return idd(pset, photo, suffix)
+
     extra = ''
     photo_index = INCREMENT_INDEX[pset.id][photo.title]
     if photo_index:

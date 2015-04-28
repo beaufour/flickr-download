@@ -16,7 +16,7 @@ class TestFilenameHandlers(unittest.TestCase):
         self.assertEqual(fn(self._pset, self._photo, self._suffix),
                          'Some Photo.jpg')
 
-    def test_empty_title(self):
+    def test_title_empty_title(self):
         photo = AttrDict({'title': '', 'id': 192})
         fn = get_filename_handler('title')
         self.assertEqual(fn(self._pset, photo, self._suffix),
@@ -26,6 +26,12 @@ class TestFilenameHandlers(unittest.TestCase):
         fn = get_filename_handler('title_and_id')
         self.assertEqual(fn(self._pset, self._photo, self._suffix),
                          'Some Photo-123.jpg')
+
+    def test_title_and_id_empty_title(self):
+        photo = AttrDict({'title': '', 'id': 1389})
+        fn = get_filename_handler('title_and_id')
+        self.assertEqual(fn(self._pset, photo, self._suffix),
+                         '1389.jpg')
 
     def test_id(self):
         fn = get_filename_handler('id')
@@ -49,6 +55,12 @@ class TestFilenameHandlers(unittest.TestCase):
         pset2 = AttrDict({'title': 'Some Other Set', 'id': 1000})
         self.assertEqual(fn(pset2, self._photo, self._suffix),
                          'Some Photo.jpg')
+
+    def test_title_increment_empty_title(self):
+        photo = AttrDict({'title': '', 'id': 175})
+        fn = get_filename_handler('title_increment')
+        self.assertEqual(fn(self._pset, photo, self._suffix),
+                         '175.jpg')
 
 if __name__ == '__main__':
     unittest.main()
