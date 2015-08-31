@@ -104,11 +104,13 @@ def download_set(set_id, get_filename, size_label=None):
                 break
             raise
 
-    if not os.path.exists(pset.title):
-        os.mkdir(pset.title)
+    # we need to convert pathname separator to something else to create a valid directory
+    dirname = pset.title.replace(os.sep, "_")
+    if not os.path.exists(dirname):
+        os.mkdir(dirname)
 
     for photo in photos:
-        fname = get_full_path(pset.title, get_filename(pset, photo, suffix))
+        fname = get_full_path(dirname, get_filename(pset, photo, suffix))
         if os.path.exists(fname):
             # TODO: Ideally we should check for file size / md5 here
             # to handle failed downloads.
