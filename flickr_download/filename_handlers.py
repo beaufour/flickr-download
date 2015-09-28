@@ -8,10 +8,23 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from collections import defaultdict
 
+DEFAULT_HANDLER = 'title'
+"""The default handler if none is specified"""
+
+
+def _get_short_docstring(docstring):
+    """
+    Given a docstring return the first sentence of it.
+
+    @param: docstring: str, the docstring to parsde
+    @return: str, the short docstring
+    """
+    return docstring.split('.')[0].strip()
+
 
 def title(pset, photo, suffix):
     """
-    Name file after title. Falls back to photo id.
+    Name file after title (falls back to photo id).
 
     @param pset: Flickr.Photoset, the photoset
     @param photo: Flickr.Photo, the photo
@@ -26,7 +39,7 @@ def title(pset, photo, suffix):
 
 def idd(pset, photo, suffix):
     """
-    Name file after id
+    Name file after photo id.
 
     @param pset: Flickr.Photoset, the photoset
     @param photo: Flickr.Photo, the photo
@@ -38,7 +51,7 @@ def idd(pset, photo, suffix):
 
 def title_and_id(pset, photo, suffix):
     """
-    Name file after title and photo id
+    Name file after title and photo id.
 
     @param pset: Flickr.Photoset, the photoset
     @param photo: Flickr.Photo, the photo
@@ -57,7 +70,7 @@ INCREMENT_INDEX = defaultdict(lambda: defaultdict(int))
 
 def title_increment(pset, photo, suffix):
     """
-    Name file after photo title, but add an incrementing counter on duplicates
+    Name file after photo title, but add an incrementing counter on duplicates.
 
     @param pset: Flickr.Photoset, the photoset
     @param photo: Flickr.Photo, the photo
@@ -83,10 +96,25 @@ HANDLERS = {
 }
 
 
-def get_filename_handler(name='title'):
+def get_filename_handler(name):
     """
     Returns the given filename handler as a function
     @param name: str, name of the handler to return
     @return: Function, handler
     """
-    return HANDLERS[name]
+    return HANDLERS[name or DEFAULT_HANDLER]
+
+
+def get_filename_handler_help():
+    """
+    Returns a description of each handler to be used for help output.
+
+    @return: str, help text
+    """
+    ret = []
+    for name, func in HANDLERS.iteritems():
+        ret.append('  {handler} - {doc}{default}'
+                   .format(handler=name,
+                           doc=_get_short_docstring(func.__doc__),
+                           default=(' (DEFAULT)' if name == DEFAULT_HANDLER else '')))
+    return 'Naming modes:\n' + '\n'.join(ret)
