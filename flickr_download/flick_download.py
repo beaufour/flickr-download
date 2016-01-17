@@ -8,6 +8,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 import argparse
+import codecs
 import errno
 import logging
 import os
@@ -208,6 +209,11 @@ def main():
     ret = _init(args.api_key, args.api_secret, args.user_auth)
     if not ret:
         return 1
+
+    # Replace stdout with a non-strict writer that replaces unknown characters instead of throwing
+    # an exception. This "fixes" print issues on the standard Windows terminal
+    if sys.stdout.encoding.lower() != 'utf-8':
+        sys.stdout = codecs.getwriter(sys.stdout.encoding)(sys.stdout, 'replace')
 
     if args.list:
         print_sets(args.list)
