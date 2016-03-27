@@ -9,16 +9,19 @@ It can also list the set ids for a given user:
 
     flickr_download -k <api key> -s <api secret> -l <user name>
 
+Get a set using the title and id to name the downloaded files:
+
+    flickr_download -k <api key> -s <api secret> -d <set id> -n title_and_id
+
+API key
+==================
+
 Get your [Flickr API key](http://www.flickr.com/services/api/).
 
 You can also set your API key and secret in `~/.flickr_download`:
 
     api_key: my_key
     api_secret: my_secret
-
-
-[![Build Status](https://travis-ci.org/beaufour/flickr-download.svg)](https://travis-ci.org/beaufour/flickr-download)
-
 
 User Authentication Support
 ===========================
@@ -35,3 +38,5 @@ Requirements
 * [Python Dateutil](http://labix.org/python-dateutil)
 * [Python Flickr API](https://github.com/alexis-mignon/python-flickr-api/)
 * [PyYAML](http://pyyaml.org/)
+
+[![Build Status](https://travis-ci.org/beaufour/flickr-download.svg)](https://travis-ci.org/beaufour/flickr-download)
