@@ -34,7 +34,7 @@ def title(pset, photo, suffix):
     if not photo.title:
         return idd(pset, photo, suffix)
 
-    return '{0}{1}.jpg'.format(photo.title, suffix)
+    return '{0}{1}'.format(photo.title, suffix)
 
 
 def idd(pset, photo, suffix):
@@ -46,7 +46,7 @@ def idd(pset, photo, suffix):
     @param suffice: str, optional suffix
     @return: str, the filename
     """
-    return '{0}{1}.jpg'.format(photo.id, suffix)
+    return '{0}{1}'.format(photo.id, suffix)
 
 
 def title_and_id(pset, photo, suffix):
@@ -61,7 +61,7 @@ def title_and_id(pset, photo, suffix):
     if not photo.title:
         return idd(pset, photo, suffix)
 
-    return '{0}-{1}{2}.jpg'.format(photo.title, photo.id, suffix)
+    return '{0}-{1}{2}'.format(photo.title, photo.id, suffix)
 
 
 INCREMENT_INDEX = defaultdict(lambda: defaultdict(int))
@@ -85,7 +85,7 @@ def title_increment(pset, photo, suffix):
     if photo_index:
         extra = '({0})'.format(photo_index)
     INCREMENT_INDEX[pset.id][photo.title] += 1
-    return '{0}{1}{2}.jpg'.format(photo.title, suffix, extra)
+    return '{0}{1}{2}'.format(photo.title, suffix, extra)
 
 
 HANDLERS = {
