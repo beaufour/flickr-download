@@ -113,6 +113,14 @@ def download_set(set_id, get_filename, size_label=None):
 
     for photo in photos:
         fname = get_full_path(dirname, get_filename(pset, photo, suffix))
+
+        if 'video' in photo.getInfo():
+            photo_size_label = 'HD MP4'
+            fname = fname + '.mp4'
+        else:
+            photo_size_label = size_label
+            fname = fname + '.jpg'
+
         if os.path.exists(fname):
             # TODO: Ideally we should check for file size / md5 here
             # to handle failed downloads.
@@ -120,7 +128,7 @@ def download_set(set_id, get_filename, size_label=None):
             continue
 
         print('Saving: {0}'.format(fname))
-        photo.save(fname, size_label)
+        photo.save(fname, photo_size_label)
 
         # Set file times to when the photo was taken
         info = photo.getInfo()
