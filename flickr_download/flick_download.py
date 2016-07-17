@@ -92,12 +92,25 @@ def download_set(set_id, get_filename, size_label=None):
     @param get_filename: Function, function that creates a filename for the photo
     @param size_label: str|None, size to download (or None for largest available)
     """
-    suffix = " ({})".format(size_label) if size_label else ""
     pset = Flickr.Photoset(id=set_id)
+    download_list(pset, pset.title, get_filename, size_label)
+
+
+def download_list(pset, photos_title, get_filename, size_label):
+    """
+    Download all the photos in the given photo list
+
+    @param pset: FlickrList, photo list to download
+    @param photos_title: str, name of the photo list
+    @param get_filename: Function, function that creates a filename for the photo
+    @param size_label: str|None, size to download (or None for largest available)
+    """
     photos = pset.getPhotos()
     pagenum = 2
     while True:
         try:
+            if pagenum > photos.info.pages:
+                break
             page = pset.getPhotos(page=pagenum)
             photos.extend(page)
             pagenum += 1
@@ -106,8 +119,10 @@ def download_set(set_id, get_filename, size_label=None):
                 break
             raise
 
+    suffix = " ({})".format(size_label) if size_label else ""
+
     # we need to convert pathname separator to something else to create a valid directory
-    dirname = pset.title.replace(os.sep, "_")
+    dirname = photos_title.replace(os.sep, "_")
     if not os.path.exists(dirname):
         os.mkdir(dirname)
 
@@ -149,6 +164,18 @@ def download_user(username, get_filename, size_label):
     photosets = user.getPhotosets()
     for photoset in photosets:
         download_set(photoset.id, get_filename, size_label)
+
+
+def download_user_photos(username, get_filename, size_label):
+    """
+    Download all the photos owned by the given user.
+
+    @param username: str, username
+    @param get_filename: Function, function that creates a filename for the photo
+    @param size_label: str|None, size to download (or None for largest available)
+    """
+    user = Flickr.Person.findByUserName(username)
+    download_list(user, username, get_filename, size_label)
 
 
 def print_sets(username):
@@ -194,6 +221,8 @@ def main():
                         help='List photosets for a user')
     parser.add_argument('-d', '--download', type=str, metavar='SET_ID',
                         help='Download the given set')
+    parser.add_argument('-p', '--download_user_photos', type=str, metavar='USERNAME',
+                        help='Download all photos for a given user')
     parser.add_argument('-u', '--download_user', type=str, metavar='USERNAME',
                         help='Download all sets for a given user')
     parser.add_argument('-q', '--quality', type=str, metavar='SIZE_LABEL',
@@ -227,13 +256,15 @@ def main():
         print_sets(args.list)
         return 0
 
-    if args.download or args.download_user:
+    if args.download or args.download_user or args.download_user_photos:
         try:
             get_filename = get_filename_handler(args.naming)
             if args.download:
                 download_set(args.download, get_filename, args.quality)
-            else:
+            elif args.download_user:
                 download_user(args.download_user, get_filename, args.quality)
+            else:
+                download_user_photos(args.download_user_photos, get_filename, args.quality)
         except KeyboardInterrupt:
             print('Forcefully aborting. Last photo download might be partial :(', file=sys.stderr)
         return 0
