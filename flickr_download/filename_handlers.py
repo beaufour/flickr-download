@@ -81,10 +81,15 @@ def title_increment(pset, photo, suffix):
         return idd(pset, photo, suffix)
 
     extra = ''
-    photo_index = INCREMENT_INDEX[pset.id][photo.title]
+    try:
+        index = pset.id
+    except AttributeError:
+        index = '1'
+
+    photo_index = INCREMENT_INDEX[index][photo.title]
     if photo_index:
         extra = '({0})'.format(photo_index)
-    INCREMENT_INDEX[pset.id][photo.title] += 1
+    INCREMENT_INDEX[index][photo.title] += 1
     return '{0}{1}{2}'.format(photo.title, suffix, extra)
 
 
