@@ -161,7 +161,7 @@ def do_download_photo(dirname, pset, photo, size_label, suffix, get_filename):
         print('Skipping {0}, as it exists already'.format(fname))
         return
 
-    print('Saving: {0}'.format(fname))
+    print('Saving: {} ({})'.format(fname, photo.getPageUrl()))
     try:
         photo.save(fname, photo_size_label)
     except IOError, ex:
