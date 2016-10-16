@@ -128,33 +128,60 @@ def download_list(pset, photos_title, get_filename, size_label):
         os.mkdir(dirname)
 
     for photo in photos:
-        fname = get_full_path(dirname, get_filename(pset, photo, suffix))
+        do_download_photo(dirname, pset, photo, size_label, suffix, get_filename)
 
-        if 'video' in photo.getInfo():
-            if 'HD MP4' in photo.getSizes():
-                photo_size_label = 'HD MP4'
-            else:
-                # Fall back for old 'short videos'
-                photo_size_label = 'Site MP4'
-            fname = fname + '.mp4'
+
+def do_download_photo(dirname, pset, photo, size_label, suffix, get_filename):
+    """
+    Handle the downloading of a single photo
+
+    @param dirname: str, directory to download to
+    @param pset: FlickrList, photo list to download
+    @param photo: FlickrPhoto, photo to download
+    @param size_label: str|None, size to download (or None for largest available)
+    @param suffix: str|None, optional suffix to add to file name
+    @param get_filename: Function, function that creates a filename for the photo
+    """
+    fname = get_full_path(dirname, get_filename(pset, photo, suffix))
+
+    if 'video' in photo.getInfo():
+        if 'HD MP4' in photo.getSizes():
+            photo_size_label = 'HD MP4'
         else:
-            photo_size_label = size_label
-            fname = fname + '.jpg'
+            # Fall back for old 'short videos'
+            photo_size_label = 'Site MP4'
+        fname = fname + '.mp4'
+    else:
+        photo_size_label = size_label
+        fname = fname + '.jpg'
 
-        if os.path.exists(fname):
-            # TODO: Ideally we should check for file size / md5 here
-            # to handle failed downloads.
-            print('Skipping {0}, as it exists already'.format(fname))
-            continue
+    if os.path.exists(fname):
+        # TODO: Ideally we should check for file size / md5 here
+        # to handle failed downloads.
+        print('Skipping {0}, as it exists already'.format(fname))
+        return
 
-        print('Saving: {0}'.format(fname))
-        photo.save(fname, photo_size_label)
+    print('Saving: {0}'.format(fname))
+    photo.save(fname, photo_size_label)
 
-        # Set file times to when the photo was taken
-        info = photo.getInfo()
-        taken = parser.parse(info['taken'])
-        taken_unix = time.mktime(taken.timetuple())
-        os.utime(fname, (taken_unix, taken_unix))
+    # Set file times to when the photo was taken
+    info = photo.getInfo()
+    taken = parser.parse(info['taken'])
+    taken_unix = time.mktime(taken.timetuple())
+    os.utime(fname, (taken_unix, taken_unix))
+
+
+def download_photo(photo_id, get_filename, size_label):
+    """
+    Download one photo
+
+    @param photo_id: str, id of the photo
+    @param get_filename: Function, function that creates a filename for the photo
+    @param size_label: str|None, size to download (or None for largest available)
+    """
+    photo = Flickr.Photo(id=photo_id)
+    suffix = " ({})".format(size_label) if size_label else ""
+    do_download_photo(".", None, photo, size_label, suffix, get_filename)
 
 
 def download_user(username, get_filename, size_label):
@@ -230,6 +257,8 @@ def main():
                         help='Download all photos for a given user')
     parser.add_argument('-u', '--download_user', type=str, metavar='USERNAME',
                         help='Download all sets for a given user')
+    parser.add_argument('-i', '--download_photo', type=str, metavar='PHOTO_ID',
+                        help='Download one specific photo')
     parser.add_argument('-q', '--quality', type=str, metavar='SIZE_LABEL',
                         default=None, help='Quality of the picture')
     parser.add_argument('-n', '--naming', type=str, metavar='NAMING_MODE',
@@ -266,13 +295,15 @@ def main():
         print_sets(args.list)
         return 0
 
-    if args.download or args.download_user or args.download_user_photos:
+    if args.download or args.download_user or args.download_user_photos or args.download_photo:
         try:
             get_filename = get_filename_handler(args.naming)
             if args.download:
                 download_set(args.download, get_filename, args.quality)
             elif args.download_user:
                 download_user(args.download_user, get_filename, args.quality)
+            elif args.download_photo:
+                download_photo(args.download_photo, get_filename, args.quality)
             else:
                 download_user_photos(args.download_user_photos, get_filename, args.quality)
         except KeyboardInterrupt:
