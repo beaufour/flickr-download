@@ -131,7 +131,11 @@ def download_list(pset, photos_title, get_filename, size_label):
         fname = get_full_path(dirname, get_filename(pset, photo, suffix))
 
         if 'video' in photo.getInfo():
-            photo_size_label = 'HD MP4'
+            if 'HD MP4' in photo.getSizes():
+                photo_size_label = 'HD MP4'
+            else:
+                # Fall back for old 'short videos'
+                photo_size_label = 'Site MP4'
             fname = fname + '.mp4'
         else:
             photo_size_label = size_label
