@@ -162,7 +162,11 @@ def do_download_photo(dirname, pset, photo, size_label, suffix, get_filename):
         return
 
     print('Saving: {0}'.format(fname))
-    photo.save(fname, photo_size_label)
+    try:
+        photo.save(fname, photo_size_label)
+    except IOError, ex:
+        logging.warning('IO error saving photo: {}'.format(ex.strerror))
+        return
 
     # Set file times to when the photo was taken
     info = photo.getInfo()
