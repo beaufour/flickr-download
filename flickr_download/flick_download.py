@@ -239,8 +239,7 @@ def main():
         '\n'
         'You can store argument defaults in ' + CONFIG_FILE + '. API keys for example:\n'
         '  api_key: .....\n'
-        '  api_secret: ...\n'
-        ,
+        '  api_secret: ...\n',
         epilog='examples:\n'
         '  list all sets for a user:\n'
         '  > {app} -k <api_key> -s <api_secret> -l beaufour\n'
