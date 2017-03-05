@@ -235,7 +235,12 @@ def main():
         'https://www.flickr.com/services/api/misc.api_keys.html\n'
         '\n'
         'For more information see:\n'
-        'https://github.com/beaufour/flickr-download',
+        'https://github.com/beaufour/flickr-download\n'
+        '\n'
+        'You can store argument defaults in ' + CONFIG_FILE + '. API keys for example:\n'
+        '  api_key: .....\n'
+        '  api_secret: ...\n'
+        ,
         epilog='examples:\n'
         '  list all sets for a user:\n'
         '  > {app} -k <api_key> -s <api_secret> -l beaufour\n'
