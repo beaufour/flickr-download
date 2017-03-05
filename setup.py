@@ -17,7 +17,7 @@ setup(name='flickr_download',
       install_requires=[
           'flickr_api==0.5',
           'python-dateutil == 1.5',
-          'PyYAML==3.11',
+          'PyYAML==3.12',
       ],
       test_suite='tests.get_tests',
       tests_require=[
