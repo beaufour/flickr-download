@@ -85,19 +85,20 @@ def _load_defaults():
     return {}
 
 
-def download_set(set_id, get_filename, size_label=None):
+def download_set(set_id, get_filename, size_label=None, skip_download=False):
     """
     Download the set with 'set_id' to the current directory.
 
     @param set_id: str, id of the photo set
     @param get_filename: Function, function that creates a filename for the photo
     @param size_label: str|None, size to download (or None for largest available)
+    @param skip_download: bool, do not actually download the photo
     """
     pset = Flickr.Photoset(id=set_id)
-    download_list(pset, pset.title, get_filename, size_label)
+    download_list(pset, pset.title, get_filename, size_label, skip_download)
 
 
-def download_list(pset, photos_title, get_filename, size_label):
+def download_list(pset, photos_title, get_filename, size_label, skip_download=False):
     """
     Download all the photos in the given photo list
 
@@ -105,6 +106,7 @@ def download_list(pset, photos_title, get_filename, size_label):
     @param photos_title: str, name of the photo list
     @param get_filename: Function, function that creates a filename for the photo
     @param size_label: str|None, size to download (or None for largest available)
+    @param skip_download: bool, do not actually download the photo
     """
     photos = pset.getPhotos()
     pagenum = 2
@@ -128,10 +130,10 @@ def download_list(pset, photos_title, get_filename, size_label):
         os.mkdir(dirname)
 
     for photo in photos:
-        do_download_photo(dirname, pset, photo, size_label, suffix, get_filename)
+        do_download_photo(dirname, pset, photo, size_label, suffix, get_filename, skip_download)
 
 
-def do_download_photo(dirname, pset, photo, size_label, suffix, get_filename):
+def do_download_photo(dirname, pset, photo, size_label, suffix, get_filename, skip_download=False):
     """
     Handle the downloading of a single photo
 
@@ -141,6 +143,7 @@ def do_download_photo(dirname, pset, photo, size_label, suffix, get_filename):
     @param size_label: str|None, size to download (or None for largest available)
     @param suffix: str|None, optional suffix to add to file name
     @param get_filename: Function, function that creates a filename for the photo
+    @param skip_download: bool, do not actually download the photo
     """
     fname = get_full_path(dirname, get_filename(pset, photo, suffix))
 
@@ -172,6 +175,9 @@ def do_download_photo(dirname, pset, photo, size_label, suffix, get_filename):
         return
 
     print('Saving: {} ({})'.format(fname, photo.getPageUrl()))
+    if skip_download:
+        return
+
     try:
         photo.save(fname, photo_size_label)
     except IOError, ex:
@@ -185,43 +191,46 @@ def do_download_photo(dirname, pset, photo, size_label, suffix, get_filename):
     os.utime(fname, (taken_unix, taken_unix))
 
 
-def download_photo(photo_id, get_filename, size_label):
+def download_photo(photo_id, get_filename, size_label, skip_download=False):
     """
     Download one photo
 
     @param photo_id: str, id of the photo
     @param get_filename: Function, function that creates a filename for the photo
     @param size_label: str|None, size to download (or None for largest available)
+    @param skip_download: bool, do not actually download the photo
     """
     photo = Flickr.Photo(id=photo_id)
     suffix = " ({})".format(size_label) if size_label else ""
-    do_download_photo(".", None, photo, size_label, suffix, get_filename)
+    do_download_photo(".", None, photo, size_label, suffix, get_filename, skip_download)
 
 
-def download_user(username, get_filename, size_label):
+def download_user(username, get_filename, size_label, skip_download=False):
     """
     Download all the sets owned by the given user.
 
     @param username: str, username
     @param get_filename: Function, function that creates a filename for the photo
     @param size_label: str|None, size to download (or None for largest available)
+    @param skip_download: bool, do not actually download the photo
     """
     user = Flickr.Person.findByUserName(username)
     photosets = user.getPhotosets()
     for photoset in photosets:
-        download_set(photoset.id, get_filename, size_label)
+        download_set(photoset.id, get_filename, size_label, skip_download)
 
 
-def download_user_photos(username, get_filename, size_label):
+def download_user_photos(username, get_filename, size_label, skip_download=False):
     """
     Download all the photos owned by the given user.
 
     @param username: str, username
     @param get_filename: Function, function that creates a filename for the photo
     @param size_label: str|None, size to download (or None for largest available)
+    @param skip_download: bool, do not actually download the photo
     """
     user = Flickr.Person.findByUserName(username)
-    download_list(user, username, get_filename, size_label)
+    download_list(user, username, get_filename, size_label, skip_download)
 
 
 def print_sets(username):
@@ -283,6 +292,8 @@ def main():
                         help='Photo naming mode')
     parser.add_argument('-m', '--list_naming', action='store_true',
                         help='List naming modes')
+    parser.add_argument('-o', '--skip_download', action='store_true',
+                        help='Skip the actual download of the photo')
     parser.set_defaults(**_load_defaults())
 
     args = parser.parse_args()
@@ -313,17 +324,21 @@ def main():
         print_sets(args.list)
         return 0
 
+    if args.skip_download:
+        print('Will skip actual downloading of files')
+
     if args.download or args.download_user or args.download_user_photos or args.download_photo:
         try:
             get_filename = get_filename_handler(args.naming)
             if args.download:
-                download_set(args.download, get_filename, args.quality)
+                download_set(args.download, get_filename, args.quality, args.skip_download)
             elif args.download_user:
-                download_user(args.download_user, get_filename, args.quality)
+                download_user(args.download_user, get_filename, args.quality, args.skip_download)
             elif args.download_photo:
-                download_photo(args.download_photo, get_filename, args.quality)
+                download_photo(args.download_photo, get_filename, args.quality, args.skip_download)
             else:
-                download_user_photos(args.download_user_photos, get_filename, args.quality)
+                download_user_photos(args.download_user_photos, get_filename, args.quality,
+                                     args.skip_download)
         except KeyboardInterrupt:
             print('Forcefully aborting. Last photo download might be partial :(', file=sys.stderr)
         return 0
