@@ -4,9 +4,7 @@ python:
   - "2.7"
 install:
   - pip install .
-  - pip install pep8
-  - pip install pyflakes
+  - pip install flake8
 script:
   - python setup.py test
-  - pep8 --config=.pep8rc flickr_download
-  - pyflakes flickr_download
+  - flake8

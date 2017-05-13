@@ -62,5 +62,6 @@ class TestFilenameHandlers(unittest.TestCase):
         self.assertEqual(fn(self._pset, photo, self._suffix),
                          '175')
 
+
 if __name__ == '__main__':
     unittest.main()
