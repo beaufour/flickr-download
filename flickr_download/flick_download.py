@@ -153,7 +153,17 @@ def do_download_photo(dirname, pset, photo, size_label, suffix, get_filename):
         fname = fname + '.mp4'
     else:
         photo_size_label = size_label
-        fname = fname + '.jpg'
+        suffix = '.jpg'
+        # Flickr returns JPEG, except for when downloading originals. The only way to find the
+        # original type it seems is through the source filename. This is not pretty...
+        if (photo_size_label == 'Original' or not photo_size_label):
+            meta = photo.getSizes().get('Original')
+            if (meta and meta['source']):
+                ext = os.path.splitext(meta['source'])[1]
+                if (ext):
+                    suffix = ext
+
+        fname = fname + suffix
 
     if os.path.exists(fname):
         # TODO: Ideally we should check for file size / md5 here
