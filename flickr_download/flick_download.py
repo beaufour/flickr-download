@@ -24,6 +24,8 @@ import yaml
 from flickr_download.filename_handlers import get_filename_handler
 from flickr_download.filename_handlers import get_filename_handler_help
 from flickr_download.utils import get_full_path
+from flickr_download.utils import get_photo_page
+from flickr_download.utils import Timer
 
 CONFIG_FILE = "~/.flickr_download"
 OAUTH_TOKEN_FILE = "~/.flickr_token"
@@ -108,13 +110,15 @@ def download_list(pset, photos_title, get_filename, size_label, skip_download=Fa
     @param size_label: str|None, size to download (or None for largest available)
     @param skip_download: bool, do not actually download the photo
     """
-    photos = pset.getPhotos()
+    with Timer('getPhotos()'):
+        photos = pset.getPhotos()
     pagenum = 2
     while True:
         try:
             if pagenum > photos.info.pages:
                 break
-            page = pset.getPhotos(page=pagenum)
+            with Timer('getPhotos()'):
+                page = pset.getPhotos(page=pagenum)
             photos.extend(page)
             pagenum += 1
         except FlickrAPIError as ex:
@@ -147,8 +151,13 @@ def do_download_photo(dirname, pset, photo, size_label, suffix, get_filename, sk
     """
     fname = get_full_path(dirname, get_filename(pset, photo, suffix))
 
-    if 'video' in photo.getInfo():
-        if 'HD MP4' in photo.getSizes():
+    with Timer('getInfo()'):
+        pInfo = photo.getInfo()
+
+    if 'video' in pInfo:
+        with Timer('getSizes()'):
+            pSizes = photo.getSizes()
+        if 'HD MP4' in pSizes:
             photo_size_label = 'HD MP4'
         else:
             # Fall back for old 'short videos'
@@ -160,7 +169,9 @@ def do_download_photo(dirname, pset, photo, size_label, suffix, get_filename, sk
         # Flickr returns JPEG, except for when downloading originals. The only way to find the
         # original type it seems is through the source filename. This is not pretty...
         if (photo_size_label == 'Original' or not photo_size_label):
-            meta = photo.getSizes().get('Original')
+            with Timer('getSizes()'):
+                pSizes = photo.getSizes()
+            meta = pSizes.get('Original')
             if (meta and meta['source']):
                 ext = os.path.splitext(meta['source'])[1]
                 if (ext):
@@ -174,19 +185,19 @@ def do_download_photo(dirname, pset, photo, size_label, suffix, get_filename, sk
         print('Skipping {0}, as it exists already'.format(fname))
         return
 
-    print('Saving: {} ({})'.format(fname, photo.getPageUrl()))
+    print('Saving: {} ({})'.format(fname, get_photo_page(pInfo)))
     if skip_download:
         return
 
     try:
-        photo.save(fname, photo_size_label)
+        with Timer('save()'):
+            photo.save(fname, photo_size_label)
     except IOError, ex:
         logging.warning('IO error saving photo: {}'.format(ex.strerror))
         return
 
     # Set file times to when the photo was taken
-    info = photo.getInfo()
-    taken = parser.parse(info['taken'])
+    taken = parser.parse(pInfo['taken'])
     taken_unix = time.mktime(taken.timetuple())
     os.utime(fname, (taken_unix, taken_unix))
 
@@ -215,7 +226,8 @@ def download_user(username, get_filename, size_label, skip_download=False):
     @param skip_download: bool, do not actually download the photo
     """
     user = Flickr.Person.findByUserName(username)
-    photosets = user.getPhotosets()
+    with Timer('getPhotosets()'):
+        photosets = user.getPhotosets()
     for photoset in photosets:
         download_set(photoset.id, get_filename, size_label, skip_download)
 
@@ -239,8 +251,10 @@ def print_sets(username):
 
     @param username: str,
     """
-    user = Flickr.Person.findByUserName(username)
-    photosets = user.getPhotosets()
+    with Timer('findByUserName()'):
+        user = Flickr.Person.findByUserName(username)
+    with Timer('getPhotosets()'):
+        photosets = user.getPhotosets()
     for photo in photosets:
         print('{0} - {1}'.format(photo.id, photo.title))
 
@@ -329,16 +343,19 @@ def main():
 
     if args.download or args.download_user or args.download_user_photos or args.download_photo:
         try:
-            get_filename = get_filename_handler(args.naming)
-            if args.download:
-                download_set(args.download, get_filename, args.quality, args.skip_download)
-            elif args.download_user:
-                download_user(args.download_user, get_filename, args.quality, args.skip_download)
-            elif args.download_photo:
-                download_photo(args.download_photo, get_filename, args.quality, args.skip_download)
-            else:
-                download_user_photos(args.download_user_photos, get_filename, args.quality,
-                                     args.skip_download)
+            with Timer('total run'):
+                get_filename = get_filename_handler(args.naming)
+                if args.download:
+                    download_set(args.download, get_filename, args.quality, args.skip_download)
+                elif args.download_user:
+                    download_user(args.download_user, get_filename, args.quality,
+                                  args.skip_download)
+                elif args.download_photo:
+                    download_photo(args.download_photo, get_filename, args.quality,
+                                   args.skip_download)
+                else:
+                    download_user_photos(args.download_user_photos, get_filename, args.quality,
+                                         args.skip_download)
         except KeyboardInterrupt:
             print('Forcefully aborting. Last photo download might be partial :(', file=sys.stderr)
         return 0
