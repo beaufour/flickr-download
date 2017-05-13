@@ -7,7 +7,7 @@ def readme():
 
 
 setup(name='flickr_download',
-      version='0.2.17',
+      version='0.2.18',
       description='Download photos from Flickr',
       long_description=readme(),
       url='https://github.com/beaufour/flickr-download.git',
