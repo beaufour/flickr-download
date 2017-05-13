@@ -7,4 +7,4 @@ install:
   - pip install flake8
 script:
   - python setup.py test
-  - flake8
+  - if [[ $TRAVIS_PYTHON_VERSION != 2.6 ]]; then flake8; fi
