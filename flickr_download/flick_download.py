@@ -17,7 +17,7 @@ import sys
 import time
 
 import flickr_api as Flickr
-from flickr_api.flickrerrors import FlickrAPIError
+from flickr_api.flickrerrors import FlickrError, FlickrAPIError
 from dateutil import parser
 import yaml
 
@@ -194,6 +194,9 @@ def do_download_photo(dirname, pset, photo, size_label, suffix, get_filename, sk
             photo.save(fname, photo_size_label)
     except IOError, ex:
         logging.warning('IO error saving photo: {}'.format(ex.strerror))
+        return
+    except FlickrError, ex:
+        logging.warning('Flickr error saving photo: {}'.format(str(ex)))
         return
 
     # Set file times to when the photo was taken
