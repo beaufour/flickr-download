@@ -57,7 +57,7 @@ def _init(key, secret, oauth):
     print(url)
     print("Copy and paste the <oauth_verifier> value from XML here and press return:")
     Flickr.set_auth_handler(auth)
-    token = raw_input()
+    token = input()
     auth.set_verifier(token)
     auth.save(os.path.expanduser(OAUTH_TOKEN_FILE))
     print("OAuth token was saved, re-run script to use it.")
@@ -192,10 +192,10 @@ def do_download_photo(dirname, pset, photo, size_label, suffix, get_filename, sk
     try:
         with Timer('save()'):
             photo.save(fname, photo_size_label)
-    except IOError, ex:
+    except IOError as ex:
         logging.warning('IO error saving photo: {}'.format(ex.strerror))
         return
-    except FlickrError, ex:
+    except FlickrError as ex:
         logging.warning('Flickr error saving photo: {}'.format(str(ex)))
         return
 
@@ -320,7 +320,7 @@ def main():
         return 1
 
     if not args.api_key or not args.api_secret:
-        print ('You need to pass in both "api_key" and "api_secret" arguments', file=sys.stderr)
+        print('You need to pass in both "api_key" and "api_secret" arguments', file=sys.stderr)
         return 1
 
     ret = _init(args.api_key, args.api_secret, args.user_auth)
@@ -330,12 +330,12 @@ def main():
     # Replace stdout with a non-strict writer that replaces unknown characters instead of throwing
     # an exception. This "fixes" print issues on the standard Windows terminal, and when there is no
     # terminal at all.
-    if sys.stdout.isatty():
-        default_encoding = sys.stdout.encoding
-    else:
-        default_encoding = locale.getpreferredencoding()
-    if default_encoding != 'utf-8':
-        sys.stdout = codecs.getwriter(default_encoding)(sys.stdout, 'replace')
+    # if sys.stdout.isatty():
+    #     default_encoding = sys.stdout.encoding
+    # else:
+    #     default_encoding = locale.getpreferredencoding()
+    # if default_encoding != 'utf-8':
+    #     sys.stdout = codecs.getwriter(default_encoding)(sys.stdout, 'replace')
 
     if args.list:
         print_sets(args.list)

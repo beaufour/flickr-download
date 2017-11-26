@@ -17,8 +17,11 @@ setup(name='flickr_download',
       packages=['flickr_download'],
       install_requires=[
           'flickr_api==0.5',
-          'python-dateutil == 1.5',
+          'python-dateutil==2.6.1',
           'PyYAML==3.12',
+      ],
+      dependency_links=[
+          'https://github.com/alexis-mignon/python-flickr-api/archive/master.zip#egg=flickr_api-0.5',
       ],
       test_suite='tests.get_tests',
       tests_require=[
