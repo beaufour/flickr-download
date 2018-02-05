@@ -1,6 +1,6 @@
-[![Build Status](https://travis-ci.org/beaufour/flickr-download.svg)](https://travis-ci.org/beaufour/flickr-download)
-
 # Introduction
+
+[![Build Status](https://travis-ci.org/beaufour/flickr-download.svg)](https://travis-ci.org/beaufour/flickr-download)
 
 Simple script to download a [Flickr](http://flickr.com) set
 
