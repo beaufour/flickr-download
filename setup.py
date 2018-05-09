@@ -16,7 +16,7 @@ setup(name='flickr_download',
       license='Apache',
       packages=['flickr_download'],
       install_requires=[
-          'flickr_api==0.5',
+          'flickr_api==0.6.1',
           'python-dateutil == 1.5',
           'PyYAML==3.12',
       ],
