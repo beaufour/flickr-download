@@ -15,8 +15,11 @@ import logging
 import os
 import sys
 import time
+import pickle
+import signal
 
 import flickr_api as Flickr
+from flickr_api.cache import SimpleCache
 from flickr_api.flickrerrors import FlickrError, FlickrAPIError
 from dateutil import parser
 import yaml
@@ -229,6 +232,7 @@ def download_user(username, get_filename, size_label, skip_download=False):
     @param skip_download: bool, do not actually download the photo
     """
     user = Flickr.Person.findByUserName(username)
+
     with Timer('getPhotosets()'):
         photosets = user.getPhotosets()
     for photoset in photosets:
@@ -261,6 +265,24 @@ def print_sets(username):
     for photo in photosets:
         print('{0} - {1}'.format(photo.id, photo.title))
 
+def get_cache(path):
+    if not os.path.exists(path):
+        cache = SimpleCache(max_entries=20000, timeout=3600)
+    else:
+        with open(path, 'rb') as handle:
+            cache = pickle.load(handle)
+            cache.lock = SimpleCache().lock
+    
+    return cache
+
+    
+def save_cache(path, cache):
+    cache.lock = None
+    with open(path, 'wb') as handle:
+        pickle.dump(cache, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    
+    print('Cache saved')
+    return True
 
 def main():
     parser = argparse.ArgumentParser(
@@ -311,9 +333,28 @@ def main():
                         help='List naming modes')
     parser.add_argument('-o', '--skip_download', action='store_true',
                         help='Skip the actual download of the photo')
+    parser.add_argument('-c', '--cache', type=str, metavar='CACHE',
+                        help='Cache results on provided file')
+    parser.add_argument("-v", "--verbose", action="store_true",
+                        help="increase output verbosity")
     parser.set_defaults(**_load_defaults())
 
     args = parser.parse_args()
+
+    if args.verbose:
+        logging.getLogger().setLevel(logging.DEBUG)
+
+    cache = None
+    if args.cache:
+        cache = get_cache(args.cache)
+        Flickr.enable_cache(cache)
+
+        def signal_handler(signal, frame):
+            save_cache(args.cache, cache)
+            sys.exit(0)
+        signal.signal(signal.SIGINT, signal_handler)
+
+        print('Cache is enabled')
 
     if args.list_naming:
         print(get_filename_handler_help())
@@ -361,6 +402,9 @@ def main():
                                          args.skip_download)
         except KeyboardInterrupt:
             print('Forcefully aborting. Last photo download might be partial :(', file=sys.stderr)
+        
+        if cache:
+            save_cache(args.cache, cache)
         return 0
 
     print('ERROR: Must pass either --list or --download\n', file=sys.stderr)
