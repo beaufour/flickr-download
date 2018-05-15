@@ -265,6 +265,7 @@ def print_sets(username):
     for photo in photosets:
         print('{0} - {1}'.format(photo.id, photo.title))
 
+
 def get_cache(path):
     if not os.path.exists(path):
         cache = SimpleCache(max_entries=20000, timeout=3600)
@@ -272,17 +273,18 @@ def get_cache(path):
         with open(path, 'rb') as handle:
             cache = pickle.load(handle)
             cache.lock = SimpleCache().lock
-    
+
     return cache
 
-    
+
 def save_cache(path, cache):
     cache.lock = None
     with open(path, 'wb') as handle:
         pickle.dump(cache, handle, protocol=pickle.HIGHEST_PROTOCOL)
-    
+
     print('Cache saved')
     return True
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -402,7 +404,7 @@ def main():
                                          args.skip_download)
         except KeyboardInterrupt:
             print('Forcefully aborting. Last photo download might be partial :(', file=sys.stderr)
-        
+
         if cache:
             save_cache(args.cache, cache)
         return 0
