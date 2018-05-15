@@ -17,6 +17,7 @@ import sys
 import time
 import pickle
 import signal
+import glob
 
 import flickr_api as Flickr
 from flickr_api.cache import SimpleCache
@@ -153,6 +154,11 @@ def do_download_photo(dirname, pset, photo, size_label, suffix, get_filename, sk
     @param skip_download: bool, do not actually download the photo
     """
     fname = get_full_path(dirname, get_filename(pset, photo, suffix))
+
+    existing = glob.glob(fname + ".*")
+    if glob.glob(fname + ".*"):
+        print('Skipping {0}, as it exists already'.format(', '.join(existing)))
+        return
 
     with Timer('getInfo()'):
         pInfo = photo.getInfo()
