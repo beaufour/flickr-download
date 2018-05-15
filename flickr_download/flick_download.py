@@ -153,10 +153,10 @@ def do_download_photo(dirname, pset, photo, size_label, suffix, get_filename, sk
     @param get_filename: Function, function that creates a filename for the photo
     @param skip_download: bool, do not actually download the photo
     """
-    fname = get_full_path(dirname, get_filename(pset, photo, suffix))
+    api_fname = get_full_path(dirname, get_filename(pset, photo, suffix))
 
-    existing = glob.glob(fname + ".*")
-    if glob.glob(fname + ".*"):
+    existing = glob.glob(api_fname + ".???")
+    if existing:
         print('Skipping {0}, as it exists already'.format(', '.join(existing)))
         return
 
@@ -171,7 +171,7 @@ def do_download_photo(dirname, pset, photo, size_label, suffix, get_filename, sk
         else:
             # Fall back for old 'short videos'
             photo_size_label = 'Site MP4'
-        fname = fname + '.mp4'
+        fname = api_fname + '.mp4'
     else:
         photo_size_label = size_label
         suffix = '.jpg'
@@ -186,7 +186,7 @@ def do_download_photo(dirname, pset, photo, size_label, suffix, get_filename, sk
                 if (ext):
                     suffix = ext
 
-        fname = fname + suffix
+        fname = api_fname + suffix
 
     if os.path.exists(fname):
         # TODO: Ideally we should check for file size / md5 here
@@ -200,7 +200,7 @@ def do_download_photo(dirname, pset, photo, size_label, suffix, get_filename, sk
 
     try:
         with Timer('save()'):
-            photo.save(fname, photo_size_label)
+            photo.save(api_fname, photo_size_label)
     except IOError, ex:
         logging.warning('IO error saving photo: {}'.format(ex.strerror))
         return
