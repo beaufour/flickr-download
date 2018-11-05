@@ -219,6 +219,18 @@ def download_photo(photo_id, get_filename, size_label, skip_download=False):
     do_download_photo(".", None, photo, size_label, suffix, get_filename, skip_download)
 
 
+def find_user(userid):
+    if userid.startswith("https://") or \
+       userid.startswith("www.flickr.com") or \
+        userid.startswith("flickr.com"):
+        user = Flickr.Person.findByUrl(userid)
+    elif userid.find("@") > 0:
+        user = Flickr.Person.findByEmail(userid)
+    else:
+        user = Flickr.Person.findByUserName(userid)
+    return user
+
+
 def download_user(username, get_filename, size_label, skip_download=False):
     """
     Download all the sets owned by the given user.
@@ -228,7 +240,7 @@ def download_user(username, get_filename, size_label, skip_download=False):
     @param size_label: str|None, size to download (or None for largest available)
     @param skip_download: bool, do not actually download the photo
     """
-    user = Flickr.Person.findByUserName(username)
+    user = find_user(username)
     with Timer('getPhotosets()'):
         photosets = user.getPhotosets()
     for photoset in photosets:
@@ -244,7 +256,7 @@ def download_user_photos(username, get_filename, size_label, skip_download=False
     @param size_label: str|None, size to download (or None for largest available)
     @param skip_download: bool, do not actually download the photo
     """
-    user = Flickr.Person.findByUserName(username)
+    user = find_user(username)
     download_list(user, username, get_filename, size_label, skip_download)
 
 
@@ -255,7 +267,7 @@ def print_sets(username):
     @param username: str,
     """
     with Timer('findByUserName()'):
-        user = Flickr.Person.findByUserName(username)
+        user = find_user(username)
     with Timer('getPhotosets()'):
         photosets = user.getPhotosets()
     for photo in photosets:
