@@ -37,7 +37,15 @@ running the script with the `t` parameter to authorize the app.
     flickr_download -k <api key> -s <api secret> -t
 
 This will save `.flickr_token` containing the authorisation. Subsequent calls with `-t` will use the
-stored token.
+stored token. For example using
+
+    flickr_download -k <api key> -s <api secret> -l <USER>
+
+with _USER_ set to your own username, will only fetch your publicly available sets, whereas adding `-t`
+
+    flickr_download -k <api key> -s <api secret> -l <USER> -t
+
+will fetch all your sets including private restricted sets.
 
 # Requirements
 
