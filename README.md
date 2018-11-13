@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/beaufour/flickr-download.svg)](https://travis-ci.org/beaufour/flickr-download)
 
-Simple script to download a [Flickr](http://flickr.com) set
+Simple script to download a [Flickr](http://flickr.com) set.
 
 To use it you need to get your own Flickr API key here:
 https://www.flickr.com/services/api/misc.api_keys.html
@@ -18,6 +18,12 @@ Get a public set using the title and id to name the downloaded files:
     flickr_download -k <api key> -s <api secret> -d <set id> -n title_and_id
 
 Download private or restricted photos by authorising against the users account. (see below)
+
+# Installation
+
+To install this script use the Python pip utility bundled with your Python distribution:
+
+    pip install flickr_download
 
 # API key
 
