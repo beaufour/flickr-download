@@ -266,7 +266,7 @@ def print_sets(username):
 
     @param username: str,
     """
-    with Timer('findByUserName()'):
+    with Timer('find_user()'):
         user = find_user(username)
     with Timer('getPhotosets()'):
         photosets = user.getPhotosets()
