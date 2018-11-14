@@ -100,6 +100,23 @@ def download_set(set_id, get_filename, size_label=None, skip_download=False):
     download_list(pset, pset.title, get_filename, size_label, skip_download)
 
 
+def valid_filesystem_name(orig_basename):
+    """
+    Derive a valid file/directory name from the 'orig_basename'.
+
+    Unix filesystems allow almost anything but '/' in the filename,
+    but Windows has many restrictions: https://stackoverflow.com/a/31976060/25450
+    """
+    import re
+    forbiddenchars = re.compile(u"([/\\\\<\\>:\"\\|\\?\\*]|[\x00-\x1F])", re.UNICODE)
+    name = re.sub(forbiddenchars, "_", orig_basename)
+    trailingdotorws = re.compile("[\\.\\s]+$")
+    name = re.sub(trailingdotorws, "", name)
+    reservednames = re.compile(r'^(com|prn|aux|nul|com[1-9]|lpt[1-9])$', re.I)
+    name = re.sub(reservednames, "_\\1", name)
+    return name
+
+
 def download_list(pset, photos_title, get_filename, size_label, skip_download=False):
     """
     Download all the photos in the given photo list
@@ -129,7 +146,7 @@ def download_list(pset, photos_title, get_filename, size_label, skip_download=Fa
     suffix = " ({})".format(size_label) if size_label else ""
 
     # we need to convert pathname separator to something else to create a valid directory
-    dirname = photos_title.replace(os.sep, "_")
+    dirname = valid_filesystem_name(photos_title)
     if not os.path.exists(dirname):
         os.mkdir(dirname)
 
@@ -149,7 +166,9 @@ def do_download_photo(dirname, pset, photo, size_label, suffix, get_filename, sk
     @param get_filename: Function, function that creates a filename for the photo
     @param skip_download: bool, do not actually download the photo
     """
-    fname = get_full_path(dirname, get_filename(pset, photo, suffix))
+    fname_base = get_filename(pset, photo, suffix)
+    fname_base_valid = valid_filesystem_name(fname_base)
+    fname = get_full_path(dirname, fname_base_valid)
 
     with Timer('getInfo()'):
         pInfo = photo.getInfo()
