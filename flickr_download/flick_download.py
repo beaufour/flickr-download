@@ -151,8 +151,13 @@ def do_download_photo(dirname, pset, photo, size_label, suffix, get_filename, sk
     """
     fname = get_full_path(dirname, get_filename(pset, photo, suffix))
 
-    with Timer('getInfo()'):
-        pInfo = photo.getInfo()
+    pinfo = {}
+    try:
+        with Timer('getInfo()'):
+            pInfo = photo.getInfo()
+    except FlickrError:
+        print('Skipping {0}, because cannot get info from Flickr'.format(fname))
+        return
 
     if 'video' in pInfo:
         with Timer('getSizes()'):
