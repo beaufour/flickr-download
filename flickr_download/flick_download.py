@@ -35,6 +35,7 @@ FILESYSTEM_RESERVED_CHARS = re.compile(u"([/\\\\<\\>:\"\\|\\?\\*]|[\x00-\x1F])",
 FILESYSTEM_RESERVED_TRAILING_DOT_OR_WS = re.compile("[\\.\\s]+$")
 FILESYSTEM_RESERVED_FILENAMES = re.compile(r'^(com|prn|aux|nul|com[1-9]|lpt[1-9])$', re.I)
 
+
 def _init(key, secret, oauth):
     """
     Initialize API.
@@ -110,7 +111,7 @@ def get_valid_filesystem_name(orig_basename):
 
     Unix filesystems allow almost anything but '/' in the filename,
     but Windows has many restrictions: https://stackoverflow.com/a/31976060/25450
-	(official doc: https://docs.microsoft.com/en-us/windows/desktop/FileIO/naming-a-file)
+    (official doc: https://docs.microsoft.com/en-us/windows/desktop/FileIO/naming-a-file)
     """
     name = FILESYSTEM_RESERVED_CHARS.sub("_", orig_basename)
     name = FILESYSTEM_RESERVED_TRAILING_DOT_OR_WS.sub("", name)
