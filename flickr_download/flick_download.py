@@ -13,6 +13,7 @@ import errno
 import locale
 import logging
 import os
+import re
 import sys
 import time
 
@@ -30,6 +31,9 @@ from flickr_download.utils import Timer
 CONFIG_FILE = "~/.flickr_download"
 OAUTH_TOKEN_FILE = "~/.flickr_token"
 
+FILESYSTEM_RESERVED_CHARS = re.compile(u"([/\\\\<\\>:\"\\|\\?\\*]|[\x00-\x1F])", re.UNICODE)
+FILESYSTEM_RESERVED_TRAILING_DOT_OR_WS = re.compile("[\\.\\s]+$")
+FILESYSTEM_RESERVED_FILENAMES = re.compile(r'^(com|prn|aux|nul|com[1-9]|lpt[1-9])$', re.I)
 
 def _init(key, secret, oauth):
     """
@@ -100,20 +104,17 @@ def download_set(set_id, get_filename, size_label=None, skip_download=False):
     download_list(pset, pset.title, get_filename, size_label, skip_download)
 
 
-def valid_filesystem_name(orig_basename):
+def get_valid_filesystem_name(orig_basename):
     """
     Derive a valid file/directory name from the 'orig_basename'.
 
     Unix filesystems allow almost anything but '/' in the filename,
     but Windows has many restrictions: https://stackoverflow.com/a/31976060/25450
+	(official doc: https://docs.microsoft.com/en-us/windows/desktop/FileIO/naming-a-file)
     """
-    import re
-    forbiddenchars = re.compile(u"([/\\\\<\\>:\"\\|\\?\\*]|[\x00-\x1F])", re.UNICODE)
-    name = re.sub(forbiddenchars, "_", orig_basename)
-    trailingdotorws = re.compile("[\\.\\s]+$")
-    name = re.sub(trailingdotorws, "", name)
-    reservednames = re.compile(r'^(com|prn|aux|nul|com[1-9]|lpt[1-9])$', re.I)
-    name = re.sub(reservednames, "_\\1", name)
+    name = FILESYSTEM_RESERVED_CHARS.sub("_", orig_basename)
+    name = FILESYSTEM_RESERVED_TRAILING_DOT_OR_WS.sub("", name)
+    name = FILESYSTEM_RESERVED_FILENAMES.sub("_\\1", name)
     return name
 
 
@@ -145,8 +146,7 @@ def download_list(pset, photos_title, get_filename, size_label, skip_download=Fa
 
     suffix = " ({})".format(size_label) if size_label else ""
 
-    # we need to convert pathname separator to something else to create a valid directory
-    dirname = valid_filesystem_name(photos_title)
+    dirname = get_valid_filesystem_name(photos_title)
     if not os.path.exists(dirname):
         os.mkdir(dirname)
 
@@ -167,7 +167,7 @@ def do_download_photo(dirname, pset, photo, size_label, suffix, get_filename, sk
     @param skip_download: bool, do not actually download the photo
     """
     fname_base = get_filename(pset, photo, suffix)
-    fname_base_valid = valid_filesystem_name(fname_base)
+    fname_base_valid = get_valid_filesystem_name(fname_base)
     fname = get_full_path(dirname, fname_base_valid)
 
     with Timer('getInfo()'):
