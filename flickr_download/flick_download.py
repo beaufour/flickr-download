@@ -151,7 +151,7 @@ def do_download_photo(dirname, pset, photo, size_label, suffix, get_filename, sk
     """
     fname = get_full_path(dirname, get_filename(pset, photo, suffix))
 
-    pinfo = {}
+    pInfo = {}
     try:
         with Timer('getInfo()'):
             pInfo = photo.getInfo()
