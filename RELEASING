@@ -1,0 +1,8 @@
+To release a new version of the tool:
+* git tag vXXXX
+* git push --tags
+* python setup.py sdist bdist_wheel upload
+* up the version in setup.py
+* git commit and push
+* edit the release notes on https://github.com/beaufour/flickr-download/releases
+
