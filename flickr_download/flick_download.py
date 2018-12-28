@@ -103,7 +103,8 @@ def download_set(set_id, get_filename, size_label=None, skip_download=False, sav
     download_list(pset, pset.title, get_filename, size_label, skip_download, save_json)
 
 
-def download_list(pset, photos_title, get_filename, size_label, skip_download=False, save_json=False):
+def download_list(pset, photos_title, get_filename, size_label, skip_download=False,
+                  save_json=False):
     """
     Download all the photos in the given photo list
 
@@ -138,10 +139,11 @@ def download_list(pset, photos_title, get_filename, size_label, skip_download=Fa
         os.mkdir(dirname)
 
     for photo in photos:
-        do_download_photo(dirname, pset, photo, size_label, suffix, get_filename, skip_download, save_json)
+        do_download_photo(dirname, pset, photo, size_label, suffix, get_filename, skip_download,
+                          save_json)
 
 
-def do_download_photo(dirname, pset, photo, size_label, suffix, get_filename, skip_download=False, 
+def do_download_photo(dirname, pset, photo, size_label, suffix, get_filename, skip_download=False,
                       save_json=False):
     """
     Handle the downloading of a single photo
@@ -156,7 +158,7 @@ def do_download_photo(dirname, pset, photo, size_label, suffix, get_filename, sk
     @param save_json: bool, save photo info as .json file
     """
     fname = get_full_path(dirname, get_filename(pset, photo, suffix))
-    jsonFname = fname + '.json';
+    jsonFname = fname + '.json'
 
     pInfo = {}
     try:
@@ -169,12 +171,11 @@ def do_download_photo(dirname, pset, photo, size_label, suffix, get_filename, sk
     if save_json:
         try:
             print('Saving photo info: {}'.format(jsonFname))
-            jsonFile = open(jsonFname, "w") 
+            jsonFile = open(jsonFname, "w")
             jsonFile.write(json.dumps(pInfo, default=serialize_json, indent=2, sort_keys=True))
-            jsonFile.close() 
-        except:
+            jsonFile.close()
+        except Exception:
             print("Trouble saving photo info:", sys.exc_info()[0])
-
 
     if 'video' in pInfo:
         with Timer('getSizes()'):
@@ -298,6 +299,7 @@ def print_sets(username):
     for photo in photosets:
         print('{0} - {1}'.format(photo.id, photo.title))
 
+
 def serialize_json(obj):
     """JSON serializer for objects not serializable by default json code"""
 
@@ -306,11 +308,11 @@ def serialize_json(obj):
 
     if isinstance(obj, Tag):
         return obj.text
-        #return obj.id +"_"+ obj.text
+        # return obj.id +"_"+ obj.text
 
     try:
         ret = obj.__dict__
-    except:
+    except Exception:
         ret = obj
     return ret
 
@@ -407,7 +409,7 @@ def main():
             with Timer('total run'):
                 get_filename = get_filename_handler(args.naming)
                 if args.download:
-                    download_set(args.download, get_filename, args.quality, args.skip_download, 
+                    download_set(args.download, get_filename, args.quality, args.skip_download,
                                  args.save_json)
                 elif args.download_user:
                     download_user(args.download_user, get_filename, args.quality,
