@@ -31,6 +31,7 @@ from flickr_download.utils import Timer
 
 CONFIG_FILE = "~/.flickr_download"
 OAUTH_TOKEN_FILE = "~/.flickr_token"
+API_RETRIES = 5
 
 
 def _init(key, secret, oauth):
@@ -179,7 +180,7 @@ def do_download_photo(dirname, pset, photo, size_label, suffix, get_filename, sk
 
     if 'video' in pInfo:
         with Timer('getSizes()'):
-            pSizes = photo.getSizes()
+            pSizes = get_photo_sizes(photo)
         if 'HD MP4' in pSizes:
             photo_size_label = 'HD MP4'
         else:
@@ -193,7 +194,7 @@ def do_download_photo(dirname, pset, photo, size_label, suffix, get_filename, sk
         # original type it seems is through the source filename. This is not pretty...
         if (photo_size_label == 'Original' or not photo_size_label):
             with Timer('getSizes()'):
-                pSizes = photo.getSizes()
+                pSizes = get_photo_sizes(photo)
             meta = pSizes.get('Original')
             if (meta and meta['source']):
                 ext = os.path.splitext(meta['source'])[1]
@@ -315,6 +316,19 @@ def serialize_json(obj):
     except Exception:
         ret = obj
     return ret
+
+
+def get_photo_sizes(photo):
+    for attempt in range(1, (API_RETRIES + 1)):
+        try:
+            return photo.getSizes()
+        except FlickrError as ex:
+            logging.warning("Flickr error getting photo size: {}, "
+                            "attempt: #{}, "
+                            "attempts left: {}".format(str(ex), attempt, (API_RETRIES - attempt)))
+            time.sleep(1)
+            if attempt >= API_RETRIES:
+                raise
 
 
 def main():
