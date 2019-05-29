@@ -77,7 +77,7 @@ def _load_defaults():
     logging.debug('Loading configuration from {}'.format(filename))
     try:
         with open(filename, 'r') as cfile:
-            vals = yaml.load(cfile.read())
+            vals = yaml.load(cfile.read(), Loader=yaml.FullLoader)
             return vals
     except yaml.YAMLError as ex:
         logging.warning('Could not parse configuration file: {}'.format(ex))
