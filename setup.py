@@ -7,7 +7,7 @@ def readme():
 
 
 setup(name='flickr_download',
-      version='0.2.21',
+      version='0.2.22',
       description='Download photos from Flickr',
       long_description=readme(),
       long_description_content_type='text/markdown',
