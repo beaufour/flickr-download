@@ -137,7 +137,18 @@ def download_list(pset, photos_title, get_filename, size_label, skip_download=Fa
     # we need to convert pathname separator to something else to create a valid directory
     dirname = photos_title.replace(os.sep, "_")
     if not os.path.exists(dirname):
-        os.mkdir(dirname)
+        try:
+            os.mkdir(dirname)
+        except OSError, err:
+            if err.errno == errno.ENAMETOOLONG:
+                print('WARNING: Truncating too long directory name: {}'.format(dirname))
+                # Not the most fantastic handling here, but it is surprisingly hard to get the max
+                # length in an OS-agnostic way... Assuming that most OSes can handle at least 200
+                # chars...
+                dirname = dirname[:200]
+            else:
+                raise
+
 
     for photo in photos:
         do_download_photo(dirname, pset, photo, size_label, suffix, get_filename, skip_download,
