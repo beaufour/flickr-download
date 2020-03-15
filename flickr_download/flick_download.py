@@ -139,7 +139,7 @@ def download_list(pset, photos_title, get_filename, size_label, skip_download=Fa
     if not os.path.exists(dirname):
         try:
             os.mkdir(dirname)
-        except OSError, err:
+        except OSError as err:
             if err.errno == errno.ENAMETOOLONG:
                 print('WARNING: Truncating too long directory name: {}'.format(dirname))
                 # Not the most fantastic handling here, but it is surprisingly hard to get the max
@@ -226,10 +226,10 @@ def do_download_photo(dirname, pset, photo, size_label, suffix, get_filename, sk
     try:
         with Timer('save()'):
             photo.save(fname, photo_size_label)
-    except IOError, ex:
+    except IOError as ex:
         logging.warning('IO error saving photo: {}'.format(ex.strerror))
         return
-    except FlickrError, ex:
+    except FlickrError as ex:
         logging.warning('Flickr error saving photo: {}'.format(str(ex)))
         return
 
@@ -401,7 +401,7 @@ def main():
         return 1
 
     if not args.api_key or not args.api_secret:
-        print ('You need to pass in both "api_key" and "api_secret" arguments', file=sys.stderr)
+        print('You need to pass in both "api_key" and "api_secret" arguments', file=sys.stderr)
         return 1
 
     ret = _init(args.api_key, args.api_secret, args.user_auth)
