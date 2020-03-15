@@ -3,32 +3,27 @@
 # Util to download a full Flickr set.
 #
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
+
 import argparse
-import codecs
 import errno
-import locale
+import json
 import logging
 import os
 import sys
 import time
-import json
 
 import flickr_api as Flickr
-from flickr_api.flickrerrors import FlickrError, FlickrAPIError
-from flickr_api.objects import Person, Tag
-from dateutil import parser
 import yaml
+from dateutil import parser
+from flickr_api.flickrerrors import FlickrAPIError, FlickrError
+from flickr_api.objects import Person, Tag
 
-from flickr_download.filename_handlers import get_filename_handler
-from flickr_download.filename_handlers import get_filename_handler_help
-from flickr_download.utils import get_dirname
-from flickr_download.utils import get_full_path
-from flickr_download.utils import get_photo_page
-from flickr_download.utils import Timer
+from flickr_download.filename_handlers import (get_filename_handler,
+                                               get_filename_handler_help)
+from flickr_download.utils import (Timer, get_dirname, get_full_path,
+                                   get_photo_page)
 
 CONFIG_FILE = "~/.flickr_download"
 OAUTH_TOKEN_FILE = "~/.flickr_token"
@@ -479,16 +474,6 @@ def main():
     ret = _init(args.api_key, args.api_secret, args.user_auth)
     if not ret:
         return 1
-
-    # Replace stdout with a non-strict writer that replaces unknown characters instead of throwing
-    # an exception. This "fixes" print issues on the standard Windows terminal, and when there is no
-    # terminal at all.
-    if sys.stdout.isatty():
-        default_encoding = sys.stdout.encoding
-    else:
-        default_encoding = locale.getpreferredencoding()
-    if default_encoding != "utf-8":
-        sys.stdout = codecs.getwriter(default_encoding)(sys.stdout, "replace")
 
     if args.list:
         print_sets(args.list)
