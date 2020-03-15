@@ -149,7 +149,6 @@ def download_list(pset, photos_title, get_filename, size_label, skip_download=Fa
             else:
                 raise
 
-
     for photo in photos:
         do_download_photo(dirname, pset, photo, size_label, suffix, get_filename, skip_download,
                           save_json)
