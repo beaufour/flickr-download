@@ -244,10 +244,10 @@ def do_download_photo(
         with Timer("save()"):
             photo.save(fname, photo_size_label)
     except IOError as ex:
-        logging.warning("IO error saving photo: {}".format(ex.strerror))
+        logging.error('IO error saving photo: {}'.format(ex))
         return
     except FlickrError as ex:
-        logging.warning("Flickr error saving photo: {}".format(str(ex)))
+        logging.error('Flickr error saving photo: {}'.format(ex))
         return
 
     # Set file times to when the photo was taken
