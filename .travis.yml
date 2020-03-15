@@ -6,4 +6,4 @@ install:
   - pip install flake8
 script:
   - python setup.py test
-  - flake8
+  - flake8 flickr_download
