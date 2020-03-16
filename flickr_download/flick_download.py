@@ -146,6 +146,7 @@ def download_list(pset, photos_title, get_filename, size_label, skip_download=Fa
                 # length in an OS-agnostic way... Assuming that most OSes can handle at least 200
                 # chars...
                 dirname = dirname[:200]
+                os.mkdir(dirname)
             else:
                 raise
 
