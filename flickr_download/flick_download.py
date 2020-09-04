@@ -183,7 +183,6 @@ def do_download_photo(dirname, pset, photo, size_label, suffix, get_filename, sk
     fname = fname.replace("?", "_")
     fname = fname.replace("\"", "_")
     fname = fname.replace(":", "_")
-    fname = fname.replace("\\", "_")
     fname = fname.replace("/", "_")
     fname = fname.replace(">", "_")
     fname = fname.replace("<", "_")
