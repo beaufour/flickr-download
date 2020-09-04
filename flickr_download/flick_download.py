@@ -179,6 +179,15 @@ def do_download_photo(dirname, pset, photo, size_label, suffix, get_filename, sk
     except FlickrError:
         print('Skipping {0}, because cannot get info from Flickr'.format(fname))
         return
+    fname = fname.replace("*", "_")
+    fname = fname.replace("?", "_")
+    fname = fname.replace("\"", "_")
+    fname = fname.replace(":", "_")
+    fname = fname.replace("\\", "_")
+    fname = fname.replace("/", "_")
+    fname = fname.replace(">", "_")
+    fname = fname.replace("<", "_")
+    fname = fname.replace("|", "_")
 
     if save_json:
         try:
