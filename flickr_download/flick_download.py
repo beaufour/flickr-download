@@ -136,6 +136,7 @@ def download_list(pset, photos_title, get_filename, size_label, skip_download=Fa
 
     # we need to convert pathname separator to something else to create a valid directory
     dirname = photos_title.replace(os.sep, "_")
+    dirname = photos_title.replace(":", "_")    
     if not os.path.exists(dirname):
         try:
             os.mkdir(dirname)
