@@ -35,7 +35,7 @@ class TestPathSanitization(unittest.TestCase):
         self.assertEqual(
             get_filename("".join(["and*", os.path.sep, "or?.jpg"])), "and_or.jpg"
         )
-        self.assertEqual(get_filename("what*?\:/<>|what.jpg"), "what_what.jpg")
+        self.assertEqual(get_filename("what*?\\:/<>|what.jpg"), "what_what.jpg")
 
     def test_get_dirname(self):
         self.assertEqual(get_dirname("somedirname"), "somedirname")
