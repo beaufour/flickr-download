@@ -1,18 +1,42 @@
 import os
 from timeit import default_timer
 
+from pathvalidate import sanitize_filepath
+from pathvalidate import sanitize_filename
 
-def sanitize_filepath(fname):
-    """
-    Ensure that a file path does not have path name separators in it.
 
-    @param fname: str, path to sanitize
-    @return: str, sanitized path
+def replace_path_sep(name):
     """
-    ret = fname.replace(os.path.sep, '_')
+    Replaces the path separator(s) with an underscore.
+
+    @param name: str, file or dir name
+    @return: str, new name
+    """
+    ret = name.replace(os.path.sep, '_')
     if os.path.altsep:
         ret = ret.replace(os.path.altsep, '_')
+
     return ret
+
+
+def get_filename(photo):
+    """
+    Get a file name for a photo
+
+    @param photoset: str, name of photo
+    @return: str, file name
+    """
+    return sanitize_filename(replace_path_sep(photo))
+
+
+def get_dirname(photoset):
+    """
+    Get a directory name for a photo set
+
+    @param photoset: str, name of photoset
+    @return: str, directory / path name
+    """
+    return sanitize_filepath(replace_path_sep(photoset))
 
 
 def get_full_path(pset, photo):
@@ -23,7 +47,7 @@ def get_full_path(pset, photo):
     @param photo: str, photo name
     @return: str, full sanitized path
     """
-    return os.path.join(sanitize_filepath(pset), sanitize_filepath(photo))
+    return os.path.join(get_dirname(pset), get_filename(photo))
 
 
 class Timer(object):

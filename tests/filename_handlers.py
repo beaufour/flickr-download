@@ -62,6 +62,21 @@ class TestFilenameHandlers(unittest.TestCase):
         self.assertEqual(fn(self._pset, photo, self._suffix),
                          '175')
 
+    def test_valid_path(self):
+        photo = AttrDict({'title': 'fi:l*e/p\"a?t>h|', 'id': 199})
+
+        fn = get_filename_handler('title')
+        self.assertEqual(fn(self._pset, photo, self._suffix),
+                         'file_path')
+
+        fn = get_filename_handler('title_increment')
+        self.assertEqual(fn(self._pset, photo, self._suffix),
+                         'file_path')
+
+        fn = get_filename_handler('title_and_id')
+        self.assertEqual(fn(self._pset, photo, self._suffix),
+                         'file_path-199')
+
 
 if __name__ == '__main__':
     unittest.main()

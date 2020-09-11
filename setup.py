@@ -19,6 +19,8 @@ setup(name='flickr_download',
           'flickr_api==0.5',
           'python-dateutil == 1.5',
           'PyYAML>=5.1',
+          'setuptools==44.1.1',
+          'pathvalidate==0.29.1',
       ],
       test_suite='tests.get_tests',
       tests_require=[

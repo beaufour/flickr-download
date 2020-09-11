@@ -8,6 +8,9 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from collections import defaultdict
 
+from utils import get_filename
+
+
 DEFAULT_HANDLER = 'title_increment'
 """The default handler if none is specified"""
 
@@ -34,7 +37,7 @@ def title(pset, photo, suffix):
     if not photo.title:
         return idd(pset, photo, suffix)
 
-    return '{0}{1}'.format(photo.title, suffix)
+    return get_filename('{0}{1}'.format(photo.title, suffix))
 
 
 def idd(pset, photo, suffix):
@@ -61,7 +64,7 @@ def title_and_id(pset, photo, suffix):
     if not photo.title:
         return idd(pset, photo, suffix)
 
-    return '{0}-{1}{2}'.format(photo.title, photo.id, suffix)
+    return get_filename('{0}-{1}{2}'.format(photo.title, photo.id, suffix))
 
 
 INCREMENT_INDEX = defaultdict(lambda: defaultdict(int))
@@ -90,7 +93,7 @@ def title_increment(pset, photo, suffix):
     if photo_index:
         extra = '({0})'.format(photo_index)
     INCREMENT_INDEX[index][photo.title] += 1
-    return '{0}{1}{2}'.format(photo.title, suffix, extra)
+    return get_filename('{0}{1}{2}'.format(photo.title, suffix, extra))
 
 
 HANDLERS = {

@@ -25,6 +25,7 @@ import yaml
 
 from flickr_download.filename_handlers import get_filename_handler
 from flickr_download.filename_handlers import get_filename_handler_help
+from flickr_download.utils import get_dirname
 from flickr_download.utils import get_full_path
 from flickr_download.utils import get_photo_page
 from flickr_download.utils import Timer
@@ -134,8 +135,7 @@ def download_list(pset, photos_title, get_filename, size_label, skip_download=Fa
 
     suffix = " ({})".format(size_label) if size_label else ""
 
-    # we need to convert pathname separator to something else to create a valid directory
-    dirname = photos_title.replace(os.sep, "_")
+    dirname = get_dirname(photos_title)
     if not os.path.exists(dirname):
         try:
             os.mkdir(dirname)
