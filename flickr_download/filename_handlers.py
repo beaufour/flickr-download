@@ -11,7 +11,7 @@ from collections import defaultdict
 from utils import get_filename
 
 
-DEFAULT_HANDLER = 'title_increment'
+DEFAULT_HANDLER = "title_increment"
 """The default handler if none is specified"""
 
 
@@ -22,7 +22,7 @@ def _get_short_docstring(docstring):
     @param: docstring: str, the docstring to parsde
     @return: str, the short docstring
     """
-    return docstring.split('.')[0].strip()
+    return docstring.split(".")[0].strip()
 
 
 def title(pset, photo, suffix):
@@ -37,7 +37,7 @@ def title(pset, photo, suffix):
     if not photo.title:
         return idd(pset, photo, suffix)
 
-    return get_filename('{0}{1}'.format(photo.title, suffix))
+    return get_filename("{0}{1}".format(photo.title, suffix))
 
 
 def idd(pset, photo, suffix):
@@ -49,7 +49,7 @@ def idd(pset, photo, suffix):
     @param suffice: str, optional suffix
     @return: str, the filename
     """
-    return '{0}{1}'.format(photo.id, suffix)
+    return "{0}{1}".format(photo.id, suffix)
 
 
 def title_and_id(pset, photo, suffix):
@@ -64,7 +64,7 @@ def title_and_id(pset, photo, suffix):
     if not photo.title:
         return idd(pset, photo, suffix)
 
-    return get_filename('{0}-{1}{2}'.format(photo.title, photo.id, suffix))
+    return get_filename("{0}-{1}{2}".format(photo.title, photo.id, suffix))
 
 
 INCREMENT_INDEX = defaultdict(lambda: defaultdict(int))
@@ -83,24 +83,24 @@ def title_increment(pset, photo, suffix):
     if not photo.title:
         return idd(pset, photo, suffix)
 
-    extra = ''
+    extra = ""
     try:
         index = pset.id
     except AttributeError:
-        index = '1'
+        index = "1"
 
     photo_index = INCREMENT_INDEX[index][photo.title]
     if photo_index:
-        extra = '({0})'.format(photo_index)
+        extra = "({0})".format(photo_index)
     INCREMENT_INDEX[index][photo.title] += 1
-    return get_filename('{0}{1}{2}'.format(photo.title, suffix, extra))
+    return get_filename("{0}{1}{2}".format(photo.title, suffix, extra))
 
 
 HANDLERS = {
-    'title': title,
-    'id': idd,
-    'title_and_id': title_and_id,
-    'title_increment': title_increment,
+    "title": title,
+    "id": idd,
+    "title_and_id": title_and_id,
+    "title_increment": title_increment,
 }
 
 
@@ -121,8 +121,11 @@ def get_filename_handler_help():
     """
     ret = []
     for name, func in HANDLERS.iteritems():
-        ret.append('  {handler} - {doc}{default}'
-                   .format(handler=name,
-                           doc=_get_short_docstring(func.__doc__),
-                           default=(' (DEFAULT)' if name == DEFAULT_HANDLER else '')))
-    return 'Naming modes:\n' + '\n'.join(ret)
+        ret.append(
+            "  {handler} - {doc}{default}".format(
+                handler=name,
+                doc=_get_short_docstring(func.__doc__),
+                default=(" (DEFAULT)" if name == DEFAULT_HANDLER else ""),
+            )
+        )
+    return "Naming modes:\n" + "\n".join(ret)
