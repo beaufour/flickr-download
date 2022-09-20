@@ -14,7 +14,7 @@ def _get_short_docstring(docstring):
     """
     Given a docstring return the first sentence of it.
 
-    @param: docstring: str, the docstring to parsde
+    @param: docstring: str, the docstring to parse
     @return: str, the short docstring
     """
     return docstring.split(".")[0].strip()
