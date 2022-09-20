@@ -3,11 +3,10 @@ python:
   - "3.7"
   - "3.8"
   - "3.9"
-  - "3.10"
 
 install:
   - pip install poetry
   - poetry install
 script:
-  - poetry run test
+  - poetry run pytest
   - poetry run pre-commit run --all-files
