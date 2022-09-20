@@ -2,7 +2,7 @@
 
 ## Introduction
 
-[![Build Status](https://app.travis-ci.com/beaufour/flickr-download.svg?branch=master)](https://travis-ci.org/beaufour/flickr-download)
+[![Build Status](https://app.travis-ci.com/beaufour/flickr-download.svg?branch=master)](https://app.travis-ci.com/github/beaufour/flickr-download)
 
 Simple script to download a [Flickr](http://flickr.com) set.
 
