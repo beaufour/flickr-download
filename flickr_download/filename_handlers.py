@@ -4,8 +4,7 @@ Defines a set of functions that handle naming of the downloaded files.
 
 from collections import defaultdict
 
-from utils import get_filename
-
+from flickr_download.utils import get_filename
 
 DEFAULT_HANDLER = "title_increment"
 """The default handler if none is specified"""
