@@ -1,7 +1,20 @@
+# Releases
+
 To release a new version of the tool:
-* git tag vXXXX
+
+* ensure that the version has been bumped already
+* git tag v`poetry version -s`
 * git push --tags
-* python setup.py sdist bdist_wheel upload
-* up the version in setup.py
-* git commit and push
-* edit the release notes on https://github.com/beaufour/flickr-download/releases
+* poetry build
+* poetry publish
+* poetry version patch
+* git add pyproject.toml
+* git commit -m "Bumps to version `poetry version -s`"
+* git push
+* edit the release notes on <https://github.com/beaufour/flickr-download/releases>
+
+## PyPi Authentication
+
+To configure auth for PyPi for the first time do:
+
+    poetry config pypi-token.pypi my-token
