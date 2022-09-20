@@ -4,7 +4,7 @@ version = "0.2.22"
 description = "Download photos from Flickr"
 authors = ["Allan Beaufour <allan@beaufour.dk>"]
 readme = "README.md"
-license = "Apache"
+license = "Apache-2.0"
 packages = [{ include = "flickr_download" }]
 repository = "https://github.com/beaufour/flickr-download"
 
