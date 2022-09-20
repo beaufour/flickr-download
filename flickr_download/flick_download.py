@@ -47,7 +47,7 @@ def _init(key, secret, oauth):
     auth = Flickr.auth.AuthHandler()  # creates the AuthHandler object
     perms = "read"  # set the required permissions
     url = auth.get_authorization_url(perms)
-    print
+    print("")
     print("\nEnter the following url in a browser to authorize the application:")
     print(url)
     print("Copy and paste the <oauth_verifier> value from XML here and press return:")
