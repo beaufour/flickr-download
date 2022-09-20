@@ -139,7 +139,7 @@ def download_list(
                 # Not the most fantastic handling here, but it is surprisingly hard to get the max
                 # length in an OS-agnostic way... Assuming that most OSes can handle at least 200
                 # chars...
-                dirname = dirname[:200]
+                dirname = str(dirname)[:200]
                 os.mkdir(dirname)
             else:
                 raise
