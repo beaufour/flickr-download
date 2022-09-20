@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "flickr-download"
-version = "0.2.22"
+version = "0.3.0"
 description = "Download photos from Flickr"
 authors = ["Allan Beaufour <allan@beaufour.dk>"]
 readme = "README.md"
