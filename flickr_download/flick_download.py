@@ -52,7 +52,7 @@ def _init(key, secret, oauth):
     print(url)
     print("Copy and paste the <oauth_verifier> value from XML here and press return:")
     Flickr.set_auth_handler(auth)
-    token = raw_input()  # noqa: F821
+    token = input()  # noqa: F821
     auth.set_verifier(token)
     auth.save(os.path.expanduser(OAUTH_TOKEN_FILE))
     print("OAuth token was saved, re-run script to use it.")
