@@ -2,14 +2,9 @@
 Defines a set of functions that handle naming of the downloaded files.
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
 from collections import defaultdict
 
-from utils import get_filename
-
+from flickr_download.utils import get_filename
 
 DEFAULT_HANDLER = "title_increment"
 """The default handler if none is specified"""
@@ -19,7 +14,7 @@ def _get_short_docstring(docstring):
     """
     Given a docstring return the first sentence of it.
 
-    @param: docstring: str, the docstring to parsde
+    @param: docstring: str, the docstring to parse
     @return: str, the short docstring
     """
     return docstring.split(".")[0].strip()
@@ -120,7 +115,8 @@ def get_filename_handler_help():
     @return: str, help text
     """
     ret = []
-    for name, func in HANDLERS.iteritems():
+    HANDLERS.items()
+    for name, func in HANDLERS.items():
         ret.append(
             "  {handler} - {doc}{default}".format(
                 handler=name,

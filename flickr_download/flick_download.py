@@ -2,33 +2,22 @@
 #
 # Util to download a full Flickr set.
 #
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
 import argparse
-import codecs
 import errno
-import locale
+import json
 import logging
 import os
 import sys
 import time
-import json
 
 import flickr_api as Flickr
-from flickr_api.flickrerrors import FlickrError, FlickrAPIError
-from flickr_api.objects import Person, Tag
-from dateutil import parser
 import yaml
+from dateutil import parser
+from flickr_api.flickrerrors import FlickrAPIError, FlickrError
+from flickr_api.objects import Person, Tag
 
-from flickr_download.filename_handlers import get_filename_handler
-from flickr_download.filename_handlers import get_filename_handler_help
-from flickr_download.utils import get_dirname
-from flickr_download.utils import get_full_path
-from flickr_download.utils import get_photo_page
-from flickr_download.utils import Timer
+from flickr_download.filename_handlers import get_filename_handler, get_filename_handler_help
+from flickr_download.utils import Timer, get_dirname, get_full_path, get_photo_page
 
 CONFIG_FILE = "~/.flickr_download"
 OAUTH_TOKEN_FILE = "~/.flickr_token"
@@ -56,12 +45,12 @@ def _init(key, secret, oauth):
     auth = Flickr.auth.AuthHandler()  # creates the AuthHandler object
     perms = "read"  # set the required permissions
     url = auth.get_authorization_url(perms)
-    print
+    print("")
     print("\nEnter the following url in a browser to authorize the application:")
     print(url)
     print("Copy and paste the <oauth_verifier> value from XML here and press return:")
     Flickr.set_auth_handler(auth)
-    token = raw_input()  # noqa: F821
+    token = input()  # noqa: F821
     auth.set_verifier(token)
     auth.save(os.path.expanduser(OAUTH_TOKEN_FILE))
     print("OAuth token was saved, re-run script to use it.")
@@ -91,9 +80,7 @@ def _load_defaults():
     return {}
 
 
-def download_set(
-    set_id, get_filename, size_label=None, skip_download=False, save_json=False
-):
+def download_set(set_id, get_filename, size_label=None, skip_download=False, save_json=False):
     """
     Download the set with 'set_id' to the current directory.
 
@@ -148,7 +135,7 @@ def download_list(
                 # Not the most fantastic handling here, but it is surprisingly hard to get the max
                 # length in an OS-agnostic way... Assuming that most OSes can handle at least 200
                 # chars...
-                dirname = dirname[:200]
+                dirname = str(dirname)[:200]
                 os.mkdir(dirname)
             else:
                 raise
@@ -203,9 +190,7 @@ def do_download_photo(
         try:
             print("Saving photo info: {}".format(jsonFname))
             jsonFile = open(jsonFname, "w")
-            jsonFile.write(
-                json.dumps(pInfo, default=serialize_json, indent=2, sort_keys=True)
-            )
+            jsonFile.write(json.dumps(pInfo, default=serialize_json, indent=2, sort_keys=True))
             jsonFile.close()
         except Exception:
             print("Trouble saving photo info:", sys.exc_info()[0])
@@ -249,10 +234,10 @@ def do_download_photo(
         with Timer("save()"):
             photo.save(fname, photo_size_label)
     except IOError as ex:
-        logging.warning("IO error saving photo: {}".format(ex.strerror))
+        logging.error("IO error saving photo: {}".format(ex))
         return
     except FlickrError as ex:
-        logging.warning("Flickr error saving photo: {}".format(str(ex)))
+        logging.error("Flickr error saving photo: {}".format(ex))
         return
 
     # Set file times to when the photo was taken
@@ -261,9 +246,7 @@ def do_download_photo(
     os.utime(fname, (taken_unix, taken_unix))
 
 
-def download_photo(
-    photo_id, get_filename, size_label, skip_download=False, save_json=False
-):
+def download_photo(photo_id, get_filename, size_label, skip_download=False, save_json=False):
     """
     Download one photo
 
@@ -275,9 +258,7 @@ def download_photo(
     """
     photo = Flickr.Photo(id=photo_id)
     suffix = " ({})".format(size_label) if size_label else ""
-    do_download_photo(
-        ".", None, photo, size_label, suffix, get_filename, skip_download, save_json
-    )
+    do_download_photo(".", None, photo, size_label, suffix, get_filename, skip_download, save_json)
 
 
 def find_user(userid):
@@ -294,9 +275,7 @@ def find_user(userid):
     return user
 
 
-def download_user(
-    username, get_filename, size_label, skip_download=False, save_json=False
-):
+def download_user(username, get_filename, size_label, skip_download=False, save_json=False):
     """
     Download all the sets owned by the given user.
 
@@ -313,9 +292,7 @@ def download_user(
         download_set(photoset.id, get_filename, size_label, skip_download, save_json)
 
 
-def download_user_photos(
-    username, get_filename, size_label, skip_download=False, save_json=False
-):
+def download_user_photos(username, get_filename, size_label, skip_download=False, save_json=False):
     """
     Download all the photos owned by the given user.
 
@@ -386,9 +363,7 @@ def main():
         "For more information see:\n"
         "https://github.com/beaufour/flickr-download\n"
         "\n"
-        "You can store argument defaults in "
-        + CONFIG_FILE
-        + ". API keys for example:\n"
+        "You can store argument defaults in " + CONFIG_FILE + ". API keys for example:\n"
         "  api_key: .....\n"
         "  api_secret: ...\n",
         epilog="examples:\n"
@@ -405,12 +380,8 @@ def main():
     )
     parser.add_argument("-k", "--api_key", type=str, help="Flickr API key")
     parser.add_argument("-s", "--api_secret", type=str, help="Flickr API secret")
-    parser.add_argument(
-        "-t", "--user_auth", action="store_true", help="Enable user authentication"
-    )
-    parser.add_argument(
-        "-l", "--list", type=str, metavar="USER", help="List photosets for a user"
-    )
+    parser.add_argument("-t", "--user_auth", action="store_true", help="Enable user authentication")
+    parser.add_argument("-l", "--list", type=str, metavar="USER", help="List photosets for a user")
     parser.add_argument(
         "-d", "--download", type=str, metavar="SET_ID", help="Download the given set"
     )
@@ -443,12 +414,8 @@ def main():
         default=None,
         help="Quality of the picture",
     )
-    parser.add_argument(
-        "-n", "--naming", type=str, metavar="NAMING_MODE", help="Photo naming mode"
-    )
-    parser.add_argument(
-        "-m", "--list_naming", action="store_true", help="List naming modes"
-    )
+    parser.add_argument("-n", "--naming", type=str, metavar="NAMING_MODE", help="Photo naming mode")
+    parser.add_argument("-m", "--list_naming", action="store_true", help="List naming modes")
     parser.add_argument(
         "-o",
         "--skip_download",
@@ -480,16 +447,6 @@ def main():
     if not ret:
         return 1
 
-    # Replace stdout with a non-strict writer that replaces unknown characters instead of throwing
-    # an exception. This "fixes" print issues on the standard Windows terminal, and when there is no
-    # terminal at all.
-    if sys.stdout.isatty():
-        default_encoding = sys.stdout.encoding
-    else:
-        default_encoding = locale.getpreferredencoding()
-    if default_encoding != "utf-8":
-        sys.stdout = codecs.getwriter(default_encoding)(sys.stdout, "replace")
-
     if args.list:
         print_sets(args.list)
         return 0
@@ -500,12 +457,7 @@ def main():
     if args.save_json:
         print("Will save photo info in .json file with same basename as photo")
 
-    if (
-        args.download
-        or args.download_user
-        or args.download_user_photos
-        or args.download_photo
-    ):
+    if args.download or args.download_user or args.download_user_photos or args.download_photo:
         try:
             with Timer("total run"):
                 get_filename = get_filename_handler(args.naming)

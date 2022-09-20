@@ -1,8 +1,7 @@
 import os
 from timeit import default_timer
 
-from pathvalidate import sanitize_filepath
-from pathvalidate import sanitize_filename
+from pathvalidate import sanitize_filename, sanitize_filepath
 
 
 def replace_path_sep(name):

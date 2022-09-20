@@ -5,4 +5,3 @@ To release a new version of the tool:
 * up the version in setup.py
 * git commit and push
 * edit the release notes on https://github.com/beaufour/flickr-download/releases
-
