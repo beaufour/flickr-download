@@ -115,7 +115,8 @@ def get_filename_handler_help():
     @return: str, help text
     """
     ret = []
-    for name, func in HANDLERS.iteritems():
+    HANDLERS.items()
+    for name, func in HANDLERS.items():
         ret.append(
             "  {handler} - {doc}{default}".format(
                 handler=name,
