@@ -134,7 +134,7 @@ pyflakes = ">=2.4.0,<2.5.0"
 
 [[package]]
 name = "flickr-api"
-version = "0.7.3"
+version = "0.7.4"
 description = "Python wrapper for the Flickr API"
 category = "main"
 optional = false
@@ -470,7 +470,7 @@ python-versions = "*"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "8884c5498076bdebd59e944e35beaddfc4ce6bc68fcb704eccb28bc1d03686b8"
+content-hash = "1002f94aa378790ad5fdbd63076144e37e41b27f0910ab7b4c04eab30ff9fafa"
 
 [metadata.files]
 atomicwrites = [
@@ -542,8 +542,8 @@ flake8 = [
     {file = "flake8-4.0.1.tar.gz", hash = "sha256:806e034dda44114815e23c16ef92f95c91e4c71100ff52813adf7132a6ad870d"},
 ]
 flickr-api = [
-    {file = "flickr_api-0.7.3-py3-none-any.whl", hash = "sha256:b9782c06315946b395d7f1b1e051fa2ff6aab4b21c5e82b1d95c04d7295f5f24"},
-    {file = "flickr_api-0.7.3.tar.gz", hash = "sha256:2ff036ce4ca6f9be71a90310be80916b44feaeb95df5c1a9e5f57d49b64032c9"},
+    {file = "flickr_api-0.7.4-py3-none-any.whl", hash = "sha256:7253bdd81261fc5c73129139bfa9375f33ac54ece0e2e440310cb6024f7d5ed4"},
+    {file = "flickr_api-0.7.4.tar.gz", hash = "sha256:0e83252d518bbd790a79598b3b8210b6ceeb1cce74e4b4722d9d5f27e3125ff8"},
 ]
 httplib2 = [
     {file = "httplib2-0.20.4-py3-none-any.whl", hash = "sha256:8b6a905cb1c79eefd03f8669fd993c36dc341f7c558f056cb5a33b5c2f458543"},
