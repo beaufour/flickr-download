@@ -7,12 +7,15 @@ import errno
 import json
 import logging
 import os
+import pickle
+import signal
 import sys
 import time
 
 import flickr_api as Flickr
 import yaml
 from dateutil import parser
+from flickr_api.cache import SimpleCache
 from flickr_api.flickrerrors import FlickrError
 from flickr_api.objects import Person, Tag
 
@@ -307,6 +310,25 @@ def print_sets(username):
         print("{0} - {1}".format(set.id, set.title))
 
 
+def get_cache(path):
+    if not os.path.exists(path):
+        return SimpleCache(max_entries=20000, timeout=3600)
+
+    with open(path, "rb") as handle:
+        cache = pickle.load(handle)
+        cache.lock = SimpleCache().lock
+        return cache
+
+
+def save_cache(path, cache):
+    cache.lock = None
+    with open(path, "wb") as handle:
+        pickle.dump(cache, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    print("Cache saved")
+    return True
+
+
 def serialize_json(obj):
     """JSON serializer for objects not serializable by default json code"""
 
@@ -415,9 +437,29 @@ def main():
         action="store_true",
         help="Save photo info like description and tags, one .json file per photo",
     )
+    parser.add_argument(
+        "-c", "--cache", type=str, metavar="CACHE", help="Cache results in this file"
+    )
+    parser.add_argument("-v", "--verbose", action="store_true", help="Turns on verbose logging")
     parser.set_defaults(**_load_defaults())
 
     args = parser.parse_args()
+
+    if args.verbose:
+        logging.getLogger().setLevel(logging.DEBUG)
+
+    cache = None
+    if args.cache:
+        cache = get_cache(args.cache)
+        Flickr.enable_cache(cache)
+
+        def signal_handler(signal, frame):
+            save_cache(args.cache, cache)
+            sys.exit(signal)
+
+        signal.signal(signal.SIGINT, signal_handler)
+
+        print("Caching is enabled")
 
     if args.list_naming:
         print(get_filename_handler_help())
@@ -436,6 +478,8 @@ def main():
 
     if args.list:
         print_sets(args.list)
+        if cache:
+            save_cache(args.cache, cache)
         return 0
 
     if args.skip_download:
@@ -485,6 +529,9 @@ def main():
                 "Forcefully aborting. Last photo download might be partial :(",
                 file=sys.stderr,
             )
+
+        if cache:
+            save_cache(args.cache, cache)
         return 0
 
     print("ERROR: Must pass either --list or --download\n", file=sys.stderr)
