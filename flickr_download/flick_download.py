@@ -440,6 +440,7 @@ def main():
     parser.add_argument(
         "-c", "--cache", type=str, metavar="CACHE", help="Cache results in this file"
     )
+    parser.add_argument("-v", "--verbose", action="store_true", help="Turns on verbose logging")
     parser.set_defaults(**_load_defaults())
 
     args = parser.parse_args()
