@@ -478,6 +478,8 @@ def main():
 
     if args.list:
         print_sets(args.list)
+        if cache:
+            save_cache(args.cache, cache)
         return 0
 
     if args.skip_download:
