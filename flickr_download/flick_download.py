@@ -13,11 +13,11 @@ import time
 import flickr_api as Flickr
 import yaml
 from dateutil import parser
-from flickr_api.flickrerrors import FlickrAPIError, FlickrError
+from flickr_api.flickrerrors import FlickrError
 from flickr_api.objects import Person, Tag
 
 from flickr_download.filename_handlers import get_filename_handler, get_filename_handler_help
-from flickr_download.utils import Timer, get_dirname, get_full_path, get_photo_page
+from flickr_download.utils import Timer, get_dirname, get_full_list, get_full_path, get_photo_page
 
 CONFIG_FILE = "~/.flickr_download"
 OAUTH_TOKEN_FILE = "~/.flickr_token"
@@ -107,21 +107,8 @@ def download_list(
     @param skip_download: bool, do not actually download the photo
     @param save_json: bool, save photo info as .json file
     """
-    with Timer("getPhotos()"):
-        photos = pset.getPhotos()
-    pagenum = 2
-    while True:
-        try:
-            if pagenum > photos.info.pages:
-                break
-            with Timer("getPhotos()"):
-                page = pset.getPhotos(page=pagenum)
-            photos.extend(page)
-            pagenum += 1
-        except FlickrAPIError as ex:
-            if ex.code == 1:
-                break
-            raise
+
+    photos = get_full_list(pset.getPhotos)
 
     suffix = " ({})".format(size_label) if size_label else ""
 
@@ -287,7 +274,7 @@ def download_user(username, get_filename, size_label, skip_download=False, save_
     """
     user = find_user(username)
     with Timer("getPhotosets()"):
-        photosets = user.getPhotosets()
+        photosets = get_full_list(user.getPhotosets)
     for photoset in photosets:
         download_set(photoset.id, get_filename, size_label, skip_download, save_json)
 
@@ -315,9 +302,9 @@ def print_sets(username):
     with Timer("find_user()"):
         user = find_user(username)
     with Timer("getPhotosets()"):
-        photosets = user.getPhotosets()
-    for photo in photosets:
-        print("{0} - {1}".format(photo.id, photo.title))
+        photosets = get_full_list(user.getPhotosets)
+    for set in photosets:
+        print("{0} - {1}".format(set.id, set.title))
 
 
 def serialize_json(obj):
@@ -428,6 +415,7 @@ def main():
         action="store_true",
         help="Save photo info like description and tags, one .json file per photo",
     )
+    parser.add_argument("-z", "--test_limit", action="store_true")
     parser.set_defaults(**_load_defaults())
 
     args = parser.parse_args()

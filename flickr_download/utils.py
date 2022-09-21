@@ -1,6 +1,7 @@
 import os
 from timeit import default_timer
 
+from flickr_api.flickrerrors import FlickrAPIError
 from pathvalidate import sanitize_filename, sanitize_filepath
 
 
@@ -81,3 +82,27 @@ def get_photo_page(photo_info):
             if url.get("type") == "photopage":
                 ret = url.get("text")
     return ret
+
+
+def get_full_list(list_getter):
+    """
+    Paginates through an entire API result and gets all the pages.
+
+    @param list_getter: Function, the function to get a new page result
+    @return: List, the full list
+    """
+    list = list_getter()
+    pagenum = 2
+    while True:
+        try:
+            if pagenum > list.info.pages:
+                break
+            page = list_getter(page=pagenum)
+            list.extend(page)
+            pagenum += 1
+        except FlickrAPIError as ex:
+            if ex.code == 1:
+                break
+            raise
+
+    return list
