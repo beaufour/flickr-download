@@ -438,7 +438,7 @@ def main():
         help="Save photo info like description and tags, one .json file per photo",
     )
     parser.add_argument(
-        "-c", "--cache", type=str, metavar="CACHE", help="Cache results on provided file"
+        "-c", "--cache", type=str, metavar="CACHE", help="Cache results in this file"
     )
     parser.set_defaults(**_load_defaults())
 
@@ -458,7 +458,7 @@ def main():
 
         signal.signal(signal.SIGINT, signal_handler)
 
-        print("Cache is enabled")
+        print("Caching is enabled")
 
     if args.list_naming:
         print(get_filename_handler_help())
