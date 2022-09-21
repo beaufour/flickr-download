@@ -415,7 +415,6 @@ def main():
         action="store_true",
         help="Save photo info like description and tags, one .json file per photo",
     )
-    parser.add_argument("-z", "--test_limit", action="store_true")
     parser.set_defaults(**_load_defaults())
 
     args = parser.parse_args()
