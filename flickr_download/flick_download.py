@@ -4,6 +4,7 @@
 #
 import argparse
 import errno
+import importlib.metadata
 import json
 import logging
 import os
@@ -25,6 +26,8 @@ from flickr_download.utils import Timer, get_dirname, get_full_list, get_full_pa
 CONFIG_FILE = "~/.flickr_download"
 OAUTH_TOKEN_FILE = "~/.flickr_token"
 API_RETRIES = 5
+
+__version__ = importlib.metadata.version("flickr_download")
 
 
 def _init(key, secret, oauth):
@@ -441,9 +444,14 @@ def main():
         "-c", "--cache", type=str, metavar="CACHE", help="Cache results in this file"
     )
     parser.add_argument("-v", "--verbose", action="store_true", help="Turns on verbose logging")
+    parser.add_argument("--version", action="store_true", help="Lists the version of the tool")
     parser.set_defaults(**_load_defaults())
 
     args = parser.parse_args()
+
+    if args.version:
+        print(__version__)
+        return 0
 
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)

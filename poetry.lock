@@ -182,7 +182,7 @@ python-versions = ">=3.5"
 name = "importlib-metadata"
 version = "4.2.0"
 description = "Read metadata from Python packages"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.6"
 
@@ -457,7 +457,7 @@ python-versions = ">=3.6"
 name = "typing-extensions"
 version = "4.3.0"
 description = "Backported and Experimental Type Hints for Python 3.7+"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.7"
 
@@ -504,7 +504,7 @@ python-versions = "*"
 name = "zipp"
 version = "3.8.1"
 description = "Backport of pathlib-compatible object wrapper for zip files"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.7"
 
@@ -515,7 +515,7 @@ testing = ["func-timeout", "jaraco.itertools", "pytest (>=6)", "pytest-black (>=
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "8cb51bf516af9adeb482f5295228ede43ee729c871536f69ca4e190e1b026d67"
+content-hash = "486b1f8159b989fc568972084ed21a33f4725e8ceec827ab9bbbbecd4a873d1a"
 
 [metadata.files]
 atomicwrites = [
