@@ -191,7 +191,7 @@ def do_download_photo(
     if "video" in pInfo:
         with Timer("getSizes()"):
             pSizes = get_photo_sizes(photo)
-        if "HD MP4" in pSizes:
+        if pSizes and "HD MP4" in pSizes:
             photo_size_label = "HD MP4"
         else:
             # Fall back for old 'short videos'
@@ -205,7 +205,7 @@ def do_download_photo(
         if photo_size_label == "Original" or not photo_size_label:
             with Timer("getSizes()"):
                 pSizes = get_photo_sizes(photo)
-            meta = pSizes.get("Original")
+            meta = pSizes and pSizes.get("Original")
             if meta and meta["source"]:
                 ext = os.path.splitext(meta["source"])[1]
                 if ext:
