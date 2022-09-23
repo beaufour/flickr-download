@@ -6,7 +6,12 @@ python:
 
 install:
   - pip install poetry
-  - poetry install
+
 script:
-  - poetry run pytest
+  - poetry install
+  - pip install coverage python-coveralls
+  - poetry run coverage run -m pytest
   - poetry run pre-commit run --all-files
+
+after_success:
+  - poetry run coveralls

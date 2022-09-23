@@ -2,7 +2,7 @@
 
 ## Introduction
 
-[![Build Status](https://app.travis-ci.com/beaufour/flickr-download.svg?branch=master)](https://app.travis-ci.com/github/beaufour/flickr-download)
+[![Build Status](https://app.travis-ci.com/beaufour/flickr-download.svg?branch=master)](https://app.travis-ci.com/github/beaufour/flickr-download) [![Coverage Status](https://coveralls.io/repos/github/beaufour/flickr-download/badge.svg)](https://coveralls.io/github/beaufour/flickr-download)
 
 Simple script to download a [Flickr](http://flickr.com) set.
 
