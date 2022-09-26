@@ -84,20 +84,20 @@ def get_photo_page(photo_info):
     return ret
 
 
-def get_full_list(list_getter):
+def get_full_list(list_getter, extras=None):
     """
     Paginates through an entire API result and gets all the pages.
 
     @param list_getter: Function, the function to get a new page result
     @return: List, the full list
     """
-    list = list_getter()
+    list = list_getter(extras=extras)
     pagenum = 2
     while True:
         try:
             if pagenum > list.info.pages:
                 break
-            page = list_getter(page=pagenum)
+            page = list_getter(page=pagenum, extras=extras)
             list.extend(page)
             pagenum += 1
         except FlickrAPIError as ex:
