@@ -84,6 +84,7 @@ def get_photo_page(photo_info):
     return ret
 
 
+# TODO: Should really just use the Walker class from the flickr api library
 def get_full_list(list_getter, extras=None):
     """
     Paginates through an entire API result and gets all the pages.
