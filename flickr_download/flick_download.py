@@ -10,8 +10,11 @@ import logging
 import os
 import pickle
 import signal
+import sqlite3
 import sys
 import time
+from pathlib import Path
+from typing import Optional
 
 import flickr_api as Flickr
 import yaml
@@ -86,7 +89,22 @@ def _load_defaults():
     return {}
 
 
-def download_set(set_id, get_filename, size_label=None, skip_download=False, save_json=False):
+def _get_metadata_db(dirname: str) -> sqlite3.Connection:
+    conn = sqlite3.connect(Path(dirname) / ".metadata.db")
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS downloads (photo_id text, size_label text, suffix text)"
+    )
+    return conn
+
+
+def download_set(
+    set_id,
+    get_filename,
+    size_label=None,
+    skip_download=False,
+    save_json=False,
+    metadata_store: Optional[bool] = None,
+):
     """
     Download the set with 'set_id' to the current directory.
 
@@ -97,11 +115,19 @@ def download_set(set_id, get_filename, size_label=None, skip_download=False, sav
     @param save_json: bool, save photo info as .json file
     """
     pset = Flickr.Photoset(id=set_id)
-    download_list(pset, pset.title, get_filename, size_label, skip_download, save_json)
+    download_list(
+        pset, pset.title, get_filename, size_label, skip_download, save_json, metadata_store
+    )
 
 
 def download_list(
-    pset, photos_title, get_filename, size_label, skip_download=False, save_json=False
+    pset,
+    photos_title,
+    get_filename,
+    size_label,
+    skip_download=False,
+    save_json=False,
+    metadata_store: Optional[bool] = None,
 ):
     """
     Download all the photos in the given photo list
@@ -118,6 +144,7 @@ def download_list(
 
     suffix = " ({})".format(size_label) if size_label else ""
 
+    print(f"Downloading {photos_title}")
     dirname = get_dirname(photos_title)
     if not os.path.exists(dirname):
         try:
@@ -133,6 +160,10 @@ def download_list(
             else:
                 raise
 
+    conn = None
+    if metadata_store:
+        conn = _get_metadata_db(str(dirname))
+
     for photo in photos:
         do_download_photo(
             dirname,
@@ -143,7 +174,11 @@ def download_list(
             get_filename,
             skip_download,
             save_json,
+            metadata_db=conn,
         )
+
+    if conn:
+        conn.close()
 
 
 def do_download_photo(
@@ -155,6 +190,7 @@ def do_download_photo(
     get_filename,
     skip_download=False,
     save_json=False,
+    metadata_db: Optional[sqlite3.Connection] = None,
 ):
     """
     Handle the downloading of a single photo
@@ -167,7 +203,17 @@ def do_download_photo(
     @param get_filename: Function, function that creates a filename for the photo
     @param skip_download: bool, do not actually download the photo
     @param save_json: bool, save photo info as .json file
+    @param metadata_db: optional metadata database to record downloads in
     """
+    orig_suffix = suffix or ""
+    if metadata_db:
+        if metadata_db.execute(
+            "SELECT * FROM downloads WHERE photo_id = ? AND size_label = ? AND suffix = ?",
+            (photo.id, size_label or "", orig_suffix),
+        ).fetchone():
+            print(f"Skipping download of already downloaded photo with ID: {photo.id}")
+            return
+
     fname = get_full_path(dirname, get_filename(pset, photo, suffix))
     jsonFname = fname + ".json"
 
@@ -238,6 +284,12 @@ def do_download_photo(
     taken_unix = time.mktime(taken.timetuple())
     os.utime(fname, (taken_unix, taken_unix))
 
+    if metadata_db:
+        metadata_db.execute(
+            "INSERT INTO downloads VALUES (?, ?, ?)", (photo.id, size_label or "", orig_suffix)
+        )
+        metadata_db.commit()
+
 
 def download_photo(photo_id, get_filename, size_label, skip_download=False, save_json=False):
     """
@@ -285,7 +337,14 @@ def download_user(username, get_filename, size_label, skip_download=False, save_
         download_set(photoset.id, get_filename, size_label, skip_download, save_json)
 
 
-def download_user_photos(username, get_filename, size_label, skip_download=False, save_json=False):
+def download_user_photos(
+    username,
+    get_filename,
+    size_label,
+    skip_download=False,
+    save_json=False,
+    metadata_store: Optional[bool] = None,
+):
     """
     Download all the photos owned by the given user.
 
@@ -296,7 +355,9 @@ def download_user_photos(username, get_filename, size_label, skip_download=False
     @param save_json: bool, save photo info as .json file
     """
     user = find_user(username)
-    download_list(user, username, get_filename, size_label, skip_download, save_json)
+    download_list(
+        user, username, get_filename, size_label, skip_download, save_json, metadata_store
+    )
 
 
 def print_sets(username):
@@ -441,7 +502,16 @@ def main():
         help="Save photo info like description and tags, one .json file per photo",
     )
     parser.add_argument(
-        "-c", "--cache", type=str, metavar="CACHE", help="Cache results in this file"
+        "-c",
+        "--cache",
+        type=str,
+        metavar="CACHE_FILE",
+        help="Cache results in CACHE_FILE (speed things up on large downloads in particular)",
+    )
+    parser.add_argument(
+        "--metadata_store",
+        action="store_true",
+        help="Store information about downloads in a metadata file (helps with retrying downloads)",
     )
     parser.add_argument("-v", "--verbose", action="store_true", help="Turns on verbose logging")
     parser.add_argument("--version", action="store_true", help="Lists the version of the tool")
@@ -507,6 +577,7 @@ def main():
                         args.quality,
                         args.skip_download,
                         args.save_json,
+                        args.metadata_store,
                     )
                 elif args.download_user:
                     download_user(
@@ -531,6 +602,7 @@ def main():
                         args.quality,
                         args.skip_download,
                         args.save_json,
+                        args.metadata_store,
                     )
         except KeyboardInterrupt:
             print(

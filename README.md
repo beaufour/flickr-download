@@ -25,7 +25,7 @@ Download private or restricted photos by authorizing against the users account. 
 
 To install this script use the Python pip utility bundled with your Python distribution:
 
-    pip install flickr_download
+    > pip install flickr_download
 
 ## API key
 
@@ -55,6 +55,17 @@ with _USER_ set to your own username, will only fetch your publicly available se
 
 will fetch all your sets including private restricted sets.
 
+## Downloading a lot of photos
+
+If you are downloading a lot of photos, two parameters will speed things up. Especially on errors (which the Flickr API seems to like to throw regularly). Those parameters are:
+
+* `--cache <cache_file>` – this will cache API responses in the given file, and will thus speed up repeated calls to the same API
+* `--metadata_store` - this will store metadata information for the set downloads in `.metadata.db`, which makes it faster to skip already downloaded files.
+
+So to download all the sets for a given user `XXX`, including private photos and sets, do:
+
+    > flickr_download.py -api_key KEY -api_secret SECRET --user_auth --cache api_cache --metadata_store --download_user XXX
+
 ## Optional arguments
 
     -h, --help            show this help message and exit
@@ -78,3 +89,9 @@ will fetch all your sets including private restricted sets.
                             Photo naming mode
     -m, --list_naming     List naming modes
     -o, --skip_download   Skip the actual download of the photo
+    -j, --save_json       Save photo info like description and tags, one .json file per photo
+    -c CACHE_FILE, --cache CACHE_FILE
+                            Cache results in CACHE_FILE (speed things up on large downloads in particular)
+    --metadata_store      Store information about downloads in a metadata file (helps with retrying downloads)
+    -v, --verbose         Turns on verbose logging
+    --version             Lists the version of the tool
