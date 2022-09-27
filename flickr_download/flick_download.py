@@ -217,24 +217,25 @@ def do_download_photo(
     fname = get_full_path(dirname, get_filename(pset, photo, suffix))
     jsonFname = fname + ".json"
 
-    pInfo = {}
-    try:
-        pInfo = photo.getInfo()
-    except FlickrError:
-        print("Skipping {0}, because cannot get info from Flickr".format(fname))
-        return
+    if not photo["loaded"]:
+        # trying not trigger two calls to Photo.getInfo here, as it will if it was already loaded
+        try:
+            photo.load()
+        except FlickrError:
+            logging.info(f"Skipping {fname}, because cannot get info from Flickr")
+            return
 
     if save_json:
         try:
             logging.info(f"Saving photo info: {jsonFname}")
             jsonFile = open(jsonFname, "w")
-            jsonFile.write(json.dumps(pInfo, default=serialize_json, indent=2, sort_keys=True))
+            jsonFile.write(json.dumps(photo, default=serialize_json, indent=2, sort_keys=True))
             jsonFile.close()
         except Exception:
             logging.warning("Trouble saving photo info:", sys.exc_info()[0])
 
     photo_size_label: Optional[str]
-    if "video" in pInfo:
+    if photo.get("video"):
         pSizes = get_photo_sizes(photo)
         if pSizes and "HD MP4" in pSizes:
             photo_size_label = "HD MP4"
