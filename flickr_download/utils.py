@@ -49,9 +49,9 @@ def get_full_path(pset: str, photo: str) -> str:
 
 def get_photo_page(photo_info: Photo) -> str:
     """Get the photo page URL from a photo info object."""
-    ret = ""
     if photo_info.get("urls") and photo_info["urls"].get("url"):
         for url in photo_info["urls"]["url"]:
             if url.get("type") == "photopage":
-                ret = url.get("text")
-    return ret
+                return url.get("text")
+
+    return ""
