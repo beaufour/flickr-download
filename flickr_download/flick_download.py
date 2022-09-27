@@ -14,17 +14,22 @@ import sqlite3
 import sys
 import time
 from pathlib import Path
-from typing import Optional
+from types import FrameType
+from typing import Any, Dict, Optional
 
 import flickr_api as Flickr
 import yaml
 from dateutil import parser
 from flickr_api.cache import SimpleCache
 from flickr_api.flickrerrors import FlickrError
-from flickr_api.objects import Person, Tag
+from flickr_api.objects import Person, Photo, Photoset, Tag, Walker
 
-from flickr_download.filename_handlers import get_filename_handler, get_filename_handler_help
-from flickr_download.utils import Timer, get_dirname, get_full_list, get_full_path, get_photo_page
+from flickr_download.filename_handlers import (
+    FilenameHandler,
+    get_filename_handler,
+    get_filename_handler_help,
+)
+from flickr_download.utils import get_dirname, get_full_path, get_photo_page
 
 CONFIG_FILE = "~/.flickr_download"
 OAUTH_TOKEN_FILE = "~/.flickr_token"
@@ -33,14 +38,13 @@ API_RETRIES = 5
 __version__ = importlib.metadata.version("flickr_download")
 
 
-def _init(key, secret, oauth):
-    """
-    Initialize API.
+def _init(key: str, secret: str, oauth: Optional[str]) -> bool:
+    """Initialize API.
 
     @see: http://www.flickr.com/services/api/
 
-    @param key: str, API key
-    @param secret: str, API secret
+    @param key: API key
+    @param secret: API secret
     """
     Flickr.set_keys(key, secret)
     if not oauth:
@@ -66,11 +70,10 @@ def _init(key, secret, oauth):
     return False
 
 
-def _load_defaults():
-    """
-    Load default parameters from config file
+def _load_defaults() -> Dict[str, Any]:
+    """Load default parameters from config file.
 
-    @return: dict, default parameters
+    @return: default parameters
     """
     filename = os.path.expanduser(CONFIG_FILE)
     logging.debug("Loading configuration from {}".format(filename))
@@ -98,21 +101,20 @@ def _get_metadata_db(dirname: str) -> sqlite3.Connection:
 
 
 def download_set(
-    set_id,
-    get_filename,
-    size_label=None,
-    skip_download=False,
-    save_json=False,
+    set_id: str,
+    get_filename: FilenameHandler,
+    size_label: Optional[str] = None,
+    skip_download: bool = False,
+    save_json: bool = False,
     metadata_store: Optional[bool] = None,
-):
-    """
-    Download the set with 'set_id' to the current directory.
+) -> None:
+    """Download the set with 'set_id' to the current directory.
 
-    @param set_id: str, id of the photo set
-    @param get_filename: Function, function that creates a filename for the photo
-    @param size_label: str|None, size to download (or None for largest available)
-    @param skip_download: bool, do not actually download the photo
-    @param save_json: bool, save photo info as .json file
+    @param set_id: id of the photo set
+    @param get_filename: function that creates a filename for the photo
+    @param size_label: size to download (or None for largest available)
+    @param skip_download: do not actually download the photo
+    @param save_json: save photo info as .json file
     """
     pset = Flickr.Photoset(id=set_id)
     download_list(
@@ -121,26 +123,25 @@ def download_set(
 
 
 def download_list(
-    pset,
-    photos_title,
-    get_filename,
-    size_label,
-    skip_download=False,
-    save_json=False,
+    pset: Photoset,
+    photos_title: str,
+    get_filename: FilenameHandler,
+    size_label: Optional[str],
+    skip_download: bool = False,
+    save_json: bool = False,
     metadata_store: Optional[bool] = None,
-):
-    """
-    Download all the photos in the given photo list
+) -> None:
+    """Download all the photos in the given photo list.
 
-    @param pset: FlickrList, photo list to download
-    @param photos_title: str, name of the photo list
-    @param get_filename: Function, function that creates a filename for the photo
-    @param size_label: str|None, size to download (or None for largest available)
-    @param skip_download: bool, do not actually download the photo
-    @param save_json: bool, save photo info as .json file
+    @param pset: photo list to download
+    @param photos_title: name of the photo list
+    @param get_filename: function that creates a filename for the photo
+    @param size_label: size to download (or None for largest available)
+    @param skip_download: do not actually download the photo
+    @param save_json: save photo info as .json file
     """
 
-    photos = get_full_list(pset.getPhotos)
+    photos = Walker(pset.getPhotos)
 
     suffix = " ({})".format(size_label) if size_label else ""
 
@@ -182,27 +183,26 @@ def download_list(
 
 
 def do_download_photo(
-    dirname,
-    pset,
-    photo,
-    size_label,
-    suffix,
-    get_filename,
-    skip_download=False,
-    save_json=False,
+    dirname: str,
+    pset: Optional[Photoset],
+    photo: Photo,
+    size_label: Optional[str],
+    suffix: Optional[str],
+    get_filename: FilenameHandler,
+    skip_download: bool = False,
+    save_json: bool = False,
     metadata_db: Optional[sqlite3.Connection] = None,
-):
-    """
-    Handle the downloading of a single photo
+) -> None:
+    """Handle the downloading of a single photo.
 
-    @param dirname: str, directory to download to
-    @param pset: FlickrList, photo list to download
-    @param photo: FlickrPhoto, photo to download
-    @param size_label: str|None, size to download (or None for largest available)
-    @param suffix: str|None, optional suffix to add to file name
-    @param get_filename: Function, function that creates a filename for the photo
-    @param skip_download: bool, do not actually download the photo
-    @param save_json: bool, save photo info as .json file
+    @param dirname: directory to download to
+    @param pset: photo list to download
+    @param photo: photo to download
+    @param size_label: size to download (or None for largest available)
+    @param suffix: optional suffix to add to file name
+    @param get_filename: function that creates a filename for the photo
+    @param skip_download: do not actually download the photo
+    @param save_json: save photo info as .json file
     @param metadata_db: optional metadata database to record downloads in
     """
     orig_suffix = suffix or ""
@@ -219,8 +219,7 @@ def do_download_photo(
 
     pInfo = {}
     try:
-        with Timer("getInfo()"):
-            pInfo = photo.getInfo()
+        pInfo = photo.getInfo()
     except FlickrError:
         print("Skipping {0}, because cannot get info from Flickr".format(fname))
         return
@@ -234,9 +233,9 @@ def do_download_photo(
         except Exception:
             print("Trouble saving photo info:", sys.exc_info()[0])
 
+    photo_size_label: Optional[str]
     if "video" in pInfo:
-        with Timer("getSizes()"):
-            pSizes = get_photo_sizes(photo)
+        pSizes = get_photo_sizes(photo)
         if pSizes and "HD MP4" in pSizes:
             photo_size_label = "HD MP4"
         else:
@@ -249,15 +248,15 @@ def do_download_photo(
         # Flickr returns JPEG, except for when downloading originals. The only way to find the
         # original type it seems is through the source filename. This is not pretty...
         if photo_size_label == "Original" or not photo_size_label:
-            with Timer("getSizes()"):
-                pSizes = get_photo_sizes(photo)
+            pSizes = get_photo_sizes(photo)
             meta = pSizes and pSizes.get("Original")
             if meta and meta["source"]:
                 ext = os.path.splitext(meta["source"])[1]
                 if ext:
                     suffix = ext
 
-        fname = fname + suffix
+        if suffix:
+            fname = fname + suffix
 
     if os.path.exists(fname):
         # TODO: Ideally we should check for file size / md5 here
@@ -265,13 +264,12 @@ def do_download_photo(
         print("Skipping {0}, as it exists already".format(fname))
         return
 
-    print("Saving: {} ({})".format(fname, get_photo_page(pInfo)))
+    print("Saving: {} ({})".format(fname, get_photo_page(photo)))
     if skip_download:
         return
 
     try:
-        with Timer("save()"):
-            photo.save(fname, photo_size_label)
+        photo.save(fname, photo_size_label)
     except IOError as ex:
         logging.error("IO error saving photo: {}".format(ex))
         return
@@ -280,7 +278,7 @@ def do_download_photo(
         return
 
     # Set file times to when the photo was taken
-    taken = parser.parse(pInfo["taken"])
+    taken = parser.parse(photo["taken"])
     taken_unix = time.mktime(taken.timetuple())
     os.utime(fname, (taken_unix, taken_unix))
 
@@ -291,22 +289,27 @@ def do_download_photo(
         metadata_db.commit()
 
 
-def download_photo(photo_id, get_filename, size_label, skip_download=False, save_json=False):
-    """
-    Download one photo
+def download_photo(
+    photo_id: str,
+    get_filename: FilenameHandler,
+    size_label: Optional[str],
+    skip_download: bool = False,
+    save_json: bool = False,
+) -> None:
+    """Download one photo.
 
-    @param photo_id: str, id of the photo
-    @param get_filename: Function, function that creates a filename for the photo
-    @param size_label: str|None, size to download (or None for largest available)
-    @param skip_download: bool, do not actually download the photo
-    @param save_json: bool, save photo info as .json file
+    @param photo_id: id of the photo
+    @param get_filename: function that creates a filename for the photo
+    @param size_label: size to download (or None for largest available)
+    @param skip_download: do not actually download the photo
+    @param save_json: save photo info as .json file
     """
     photo = Flickr.Photo(id=photo_id)
     suffix = " ({})".format(size_label) if size_label else ""
     do_download_photo(".", None, photo, size_label, suffix, get_filename, skip_download, save_json)
 
 
-def find_user(userid):
+def find_user(userid: str) -> Person:
     if (
         userid.startswith("https://")
         or userid.startswith("www.flickr.com")
@@ -320,39 +323,42 @@ def find_user(userid):
     return user
 
 
-def download_user(username, get_filename, size_label, skip_download=False, save_json=False):
-    """
-    Download all the sets owned by the given user.
+def download_user(
+    username: str,
+    get_filename: FilenameHandler,
+    size_label: Optional[str],
+    skip_download: bool = False,
+    save_json: bool = False,
+) -> None:
+    """Download all the sets owned by the given user.
 
-    @param username: str, username
-    @param get_filename: Function, function that creates a filename for the photo
-    @param size_label: str|None, size to download (or None for largest available)
-    @param skip_download: bool, do not actually download the photo
-    @param save_json: bool, save photo info as .json file
+    @param username: username
+    @param get_filename: function that creates a filename for the photo
+    @param size_label: size to download (or None for largest available)
+    @param skip_download: do not actually download the photo
+    @param save_json: save photo info as .json file
     """
     user = find_user(username)
-    with Timer("getPhotosets()"):
-        photosets = get_full_list(user.getPhotosets)
+    photosets = Walker(user.getPhotosets)
     for photoset in photosets:
         download_set(photoset.id, get_filename, size_label, skip_download, save_json)
 
 
 def download_user_photos(
-    username,
-    get_filename,
-    size_label,
-    skip_download=False,
-    save_json=False,
+    username: str,
+    get_filename: FilenameHandler,
+    size_label: Optional[str],
+    skip_download: bool = False,
+    save_json: bool = False,
     metadata_store: Optional[bool] = None,
-):
-    """
-    Download all the photos owned by the given user.
+) -> None:
+    """Download all the photos owned by the given user.
 
-    @param username: str, username
-    @param get_filename: Function, function that creates a filename for the photo
-    @param size_label: str|None, size to download (or None for largest available)
-    @param skip_download: bool, do not actually download the photo
-    @param save_json: bool, save photo info as .json file
+    @param username: username
+    @param get_filename: function that creates a filename for the photo
+    @param size_label: size to download (or None for largest available)
+    @param skip_download: do not actually download the photo
+    @param save_json: save photo info as .json file
     """
     user = find_user(username)
     download_list(
@@ -360,41 +366,40 @@ def download_user_photos(
     )
 
 
-def print_sets(username):
-    """
-    Print all sets for the given user
+def print_sets(username: str) -> None:
+    """Print all sets for the given user.
 
-    @param username: str,
+    @param username: the name of the user
     """
-    with Timer("find_user()"):
-        user = find_user(username)
-    with Timer("getPhotosets()"):
-        photosets = get_full_list(user.getPhotosets)
+    user = find_user(username)
+    photosets = Walker(user.getPhotosets)
     for set in photosets:
         print("{0} - {1}".format(set.id, set.title))
 
 
-def get_cache(path):
+def get_cache(path: str) -> SimpleCache:
+    cache = SimpleCache(max_entries=20000, timeout=3600)
     if not os.path.exists(path):
-        return SimpleCache(max_entries=20000, timeout=3600)
+        return cache
 
     with open(path, "rb") as handle:
-        cache = pickle.load(handle)
-        cache.lock = SimpleCache().lock
+        db = pickle.load(handle)
+        cache.storage = db["storage"]
+        cache.expire_info = db["expire_info"]
         return cache
 
 
-def save_cache(path, cache):
-    cache.lock = None
+def save_cache(path: str, cache: SimpleCache) -> bool:
+    db = {"storage": cache.storage, "expire_info": cache.expire_info}
     with open(path, "wb") as handle:
-        pickle.dump(cache, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(db, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     print("Cache saved")
     return True
 
 
-def serialize_json(obj):
-    """JSON serializer for objects not serializable by default json code"""
+def serialize_json(obj: Any) -> Any:
+    """JSON serializer for objects not serializable by default json code."""
 
     if isinstance(obj, Person):
         return obj.username
@@ -410,7 +415,7 @@ def serialize_json(obj):
     return ret
 
 
-def get_photo_sizes(photo):
+def get_photo_sizes(photo: Photo) -> Dict[str, Any]:
     for attempt in range(1, (API_RETRIES + 1)):
         try:
             return photo.getSizes()
@@ -424,8 +429,10 @@ def get_photo_sizes(photo):
             if attempt >= API_RETRIES:
                 raise
 
+    return {}
 
-def main():
+
+def main() -> int:
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter,
         description="Downloads one or more Flickr photo sets.\n"
@@ -531,7 +538,7 @@ def main():
         cache = get_cache(args.cache)
         Flickr.enable_cache(cache)
 
-        def signal_handler(signal, frame):
+        def signal_handler(signal: int, frame: Optional[FrameType]) -> Any:
             save_cache(args.cache, cache)
             sys.exit(signal)
 
@@ -568,42 +575,41 @@ def main():
 
     if args.download or args.download_user or args.download_user_photos or args.download_photo:
         try:
-            with Timer("total run"):
-                get_filename = get_filename_handler(args.naming)
-                if args.download:
-                    download_set(
-                        args.download,
-                        get_filename,
-                        args.quality,
-                        args.skip_download,
-                        args.save_json,
-                        args.metadata_store,
-                    )
-                elif args.download_user:
-                    download_user(
-                        args.download_user,
-                        get_filename,
-                        args.quality,
-                        args.skip_download,
-                        args.save_json,
-                    )
-                elif args.download_photo:
-                    download_photo(
-                        args.download_photo,
-                        get_filename,
-                        args.quality,
-                        args.skip_download,
-                        args.save_json,
-                    )
-                else:
-                    download_user_photos(
-                        args.download_user_photos,
-                        get_filename,
-                        args.quality,
-                        args.skip_download,
-                        args.save_json,
-                        args.metadata_store,
-                    )
+            get_filename = get_filename_handler(args.naming)
+            if args.download:
+                download_set(
+                    args.download,
+                    get_filename,
+                    args.quality,
+                    args.skip_download,
+                    args.save_json,
+                    args.metadata_store,
+                )
+            elif args.download_user:
+                download_user(
+                    args.download_user,
+                    get_filename,
+                    args.quality,
+                    args.skip_download,
+                    args.save_json,
+                )
+            elif args.download_photo:
+                download_photo(
+                    args.download_photo,
+                    get_filename,
+                    args.quality,
+                    args.skip_download,
+                    args.save_json,
+                )
+            else:
+                download_user_photos(
+                    args.download_user_photos,
+                    get_filename,
+                    args.quality,
+                    args.skip_download,
+                    args.save_json,
+                    args.metadata_store,
+                )
         except KeyboardInterrupt:
             print(
                 "Forcefully aborting. Last photo download might be partial :(",
