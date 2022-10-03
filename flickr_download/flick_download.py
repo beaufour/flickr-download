@@ -386,6 +386,7 @@ def get_cache(path: str) -> SimpleCache:
     with open(path, "rb") as handle:
         db = pickle.load(handle)
         cache.storage = db["storage"]
+        logging.debug(f"Cache loaded from {path}")
         cache.expire_info = db["expire_info"]
         return cache
 
@@ -395,7 +396,7 @@ def save_cache(path: str, cache: SimpleCache) -> bool:
     with open(path, "wb") as handle:
         pickle.dump(db, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-    logging.debug("Cache saved")
+    logging.debug(f"Cache saved to {path}")
     return True
 
 
@@ -541,6 +542,7 @@ def main() -> int:
         Flickr.enable_cache(cache)
 
         def signal_handler(signal: int, frame: Optional[FrameType]) -> Any:
+            logging.debug(f"Hit signal handler for signal {signal}")
             save_cache(args.cache, cache)
             sys.exit(signal)
 
