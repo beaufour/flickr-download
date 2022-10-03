@@ -617,6 +617,10 @@ def main() -> int:
                 "Forcefully aborting. Last photo download might be partial :(",
                 file=sys.stderr,
             )
+        except Exception:
+            if cache:
+                save_cache(args.cache, cache)
+            raise
 
         if cache:
             save_cache(args.cache, cache)
