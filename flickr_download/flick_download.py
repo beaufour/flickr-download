@@ -380,23 +380,25 @@ def print_sets(username: str) -> None:
 
 def get_cache(path: str) -> SimpleCache:
     cache = SimpleCache(max_entries=20000, timeout=3600)
-    if not os.path.exists(path):
+    cache_path = Path(path)
+    if not cache_path.exists():
         return cache
 
-    with open(path, "rb") as handle:
+    with cache_path.open("rb") as handle:
         db = pickle.load(handle)
         cache.storage = db["storage"]
-        logging.debug(f"Cache loaded from {path}")
+        logging.debug(f"Cache loaded from: {cache_path.resolve()}")
         cache.expire_info = db["expire_info"]
         return cache
 
 
 def save_cache(path: str, cache: SimpleCache) -> bool:
     db = {"storage": cache.storage, "expire_info": cache.expire_info}
-    with open(path, "wb") as handle:
+    cache_path = Path(path)
+    with cache_path.open("wb") as handle:
         pickle.dump(db, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-    logging.debug(f"Cache saved to {path}")
+    logging.debug(f"Cache saved to {cache_path.resolve()}")
     return True
 
 
