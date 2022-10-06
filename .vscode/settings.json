@@ -3,6 +3,7 @@
         "attrdict",
         "cfile",
         "dateutil",
+        "easydict",
         "ENOENT",
         "flickr",
         "mktime",

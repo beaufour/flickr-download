@@ -27,7 +27,7 @@ pytest = "^5.2"
 flake8 = "^4.0.1"
 black = "^22.8.0"
 pre-commit = "^2.20.0"
-attrdict = "2.0.1"
+easydict = "^1.10"
 
 [build-system]
 requires = ["poetry-core"]

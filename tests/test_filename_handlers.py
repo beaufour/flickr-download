@@ -1,14 +1,14 @@
 from typing import cast
 
-from attrdict import AttrDict
+from easydict import EasyDict
 from flickr_api.objects import Photo, Photoset
 from flickr_download.filename_handlers import get_filename_handler
 
 
 class TestFilenameHandlers:
     def setup_method(self) -> None:
-        self._pset = cast(Photoset, AttrDict({"title": "Some Set", "id": 999}))
-        self._photo = cast(Photo, AttrDict({"title": "Some Photo", "id": 123}))
+        self._pset = cast(Photoset, EasyDict({"title": "Some Set", "id": 999}))
+        self._photo = cast(Photo, EasyDict({"title": "Some Photo", "id": 123}))
         self._suffix = ""
 
     def teardown_method(self) -> None:
@@ -16,7 +16,7 @@ class TestFilenameHandlers:
         assert fn(self._pset, self._photo, self._suffix) == "Some Photo"
 
     def test_title_empty_title(self) -> None:
-        photo = cast(Photo, AttrDict({"title": "", "id": 192}))
+        photo = cast(Photo, EasyDict({"title": "", "id": 192}))
         fn = get_filename_handler("title")
         assert fn(self._pset, photo, self._suffix) == "192"
 
@@ -25,7 +25,7 @@ class TestFilenameHandlers:
         assert fn(self._pset, self._photo, self._suffix) == "Some Photo-123"
 
     def test_title_and_id_empty_title(self) -> None:
-        photo = cast(Photo, AttrDict({"title": "", "id": 1389}))
+        photo = cast(Photo, EasyDict({"title": "", "id": 1389}))
         fn = get_filename_handler("title_and_id")
         assert fn(self._pset, photo, self._suffix) == "1389"
 
@@ -40,20 +40,20 @@ class TestFilenameHandlers:
         assert fn(self._pset, self._photo, self._suffix) == "Some Photo(1)"
 
         # Ensure no increment on different title
-        photo2 = cast(Photo, AttrDict({"title": "Some Other Photo", "id": 124}))
+        photo2 = cast(Photo, EasyDict({"title": "Some Other Photo", "id": 124}))
         assert fn(self._pset, photo2, self._suffix) == "Some Other Photo"
 
         # Ensure no increment on same title, but different set
-        pset2 = cast(Photoset, AttrDict({"title": "Some Other Set", "id": 1000}))
+        pset2 = cast(Photoset, EasyDict({"title": "Some Other Set", "id": 1000}))
         assert fn(pset2, self._photo, self._suffix) == "Some Photo"
 
     def test_title_increment_empty_title(self) -> None:
-        photo = cast(Photo, AttrDict({"title": "", "id": 175}))
+        photo = cast(Photo, EasyDict({"title": "", "id": 175}))
         fn = get_filename_handler("title_increment")
         assert fn(self._pset, photo, self._suffix) == "175"
 
     def test_valid_path(self) -> None:
-        photo = cast(Photo, AttrDict({"title": 'fi:l*e/p"a?t>h|', "id": 199}))
+        photo = cast(Photo, EasyDict({"title": 'fi:l*e/p"a?t>h|', "id": 199}))
 
         fn = get_filename_handler("title")
         assert fn(self._pset, photo, self._suffix) == "file_path"
