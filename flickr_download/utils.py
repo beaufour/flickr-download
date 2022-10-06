@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import logging
 import os
+import time
 
+from dateutil import parser
 from flickr_api.objects import Photo
 from pathvalidate import sanitize_filename, sanitize_filepath
 
@@ -55,3 +58,15 @@ def get_photo_page(photo_info: Photo) -> str:
                 return url.get("text")
 
     return ""
+
+
+def set_file_time(fname: str, taken_str: str) -> None:
+    """Set the file time to the time when the photo was taken."""
+    taken = parser.parse(taken_str)
+    try:
+        taken_unix = time.mktime(taken.timetuple())
+    except OverflowError:
+        logging.warning(f"Cannot set file time to: {taken}")
+        return
+
+    os.utime(fname, (taken_unix, taken_unix))

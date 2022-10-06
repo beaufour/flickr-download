@@ -19,7 +19,6 @@ from typing import Any, Dict, Optional
 
 import flickr_api as Flickr
 import yaml
-from dateutil import parser
 from flickr_api.cache import SimpleCache
 from flickr_api.flickrerrors import FlickrError
 from flickr_api.objects import Person, Photo, Photoset, Tag, Walker
@@ -29,7 +28,7 @@ from flickr_download.filename_handlers import (
     get_filename_handler,
     get_filename_handler_help,
 )
-from flickr_download.utils import get_dirname, get_full_path, get_photo_page
+from flickr_download.utils import get_dirname, get_full_path, get_photo_page, set_file_time
 
 CONFIG_FILE = "~/.flickr_download"
 OAUTH_TOKEN_FILE = "~/.flickr_token"
@@ -279,9 +278,7 @@ def do_download_photo(
         return
 
     # Set file times to when the photo was taken
-    taken = parser.parse(photo["taken"])
-    taken_unix = time.mktime(taken.timetuple())
-    os.utime(fname, (taken_unix, taken_unix))
+    set_file_time(fname, photo["taken"])
 
     if metadata_db:
         metadata_db.execute(

@@ -1,6 +1,7 @@
 import os
+from unittest.mock import patch
 
-from flickr_download.utils import get_dirname, get_filename, get_full_path
+from flickr_download.utils import get_dirname, get_filename, get_full_path, set_file_time
 
 
 def test_simple() -> None:
@@ -26,3 +27,15 @@ def test_get_dirname() -> None:
     assert get_dirname("somedirname") == "somedirname"
     assert get_dirname("".join(["and", os.path.sep, "or-mypath"])) == "and_or-mypath"
     assert get_dirname("".join(["and*", os.path.sep, "o:r?"])) == "and_or"
+
+
+def test_set_file_time() -> None:
+    with patch("os.utime") as mocked:
+        set_file_time("test_file_delete", "2020-03-05 08:00:00")
+        mocked.assert_called_once()
+
+    with patch("os.utime") as mocked:
+        # Assuming that a date from 1212 cannot be represented properly, no
+        # matter the OS.
+        set_file_time("test_file_delete", "1212-01-01 00:00:00")
+        mocked.assert_not_called()
