@@ -1,6 +1,8 @@
 import os
+import sys
 from unittest.mock import patch
 
+import pytest
 from flickr_download.utils import get_dirname, get_filename, get_full_path, set_file_time
 
 
@@ -34,6 +36,9 @@ def test_set_file_time() -> None:
         set_file_time("test_file_delete", "2020-03-05 08:00:00")
         mocked.assert_called_once()
 
+
+@pytest.mark.skipif(sys.platform != "darwin", reason="only seen fail on Mac so far")
+def test_set_file_time_overflow() -> None:
     with patch("os.utime") as mocked:
         # Assuming that a date from 1212 cannot be represented properly, no
         # matter the OS.
