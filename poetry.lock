@@ -99,14 +99,6 @@ optional = false
 python-versions = "*"
 
 [[package]]
-name = "easydict"
-version = "1.10"
-description = "Access dict values as attributes (works recursively)."
-category = "dev"
-optional = false
-python-versions = "*"
-
-[[package]]
 name = "filelock"
 version = "3.8.0"
 description = "A platform independent file lock."
@@ -515,7 +507,7 @@ coverage = []
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "05a8646f92248c82cb69f9ec4d43116a999c61c31ba1cfbe364a7efa776bbec3"
+content-hash = "fae90782cfee3c6a452feea920ef9b897ce3eab8c3ceee958d2031a3af3746a7"
 
 [metadata.files]
 atomicwrites = [
@@ -562,9 +554,6 @@ colorama = [
 distlib = [
     {file = "distlib-0.3.6-py2.py3-none-any.whl", hash = "sha256:f35c4b692542ca110de7ef0bea44d73981caeb34ca0b9b6b2e6d7790dda8f80e"},
     {file = "distlib-0.3.6.tar.gz", hash = "sha256:14bad2d9b04d3a36127ac97f30b12a19268f211063d8f8ee4f47108896e11b46"},
-]
-easydict = [
-    {file = "easydict-1.10.tar.gz", hash = "sha256:11dcb2c20aaabbfee4c188b4bc143ef6be044b34dbf0ce5a593242c2695a080f"},
 ]
 filelock = [
     {file = "filelock-3.8.0-py3-none-any.whl", hash = "sha256:617eb4e5eedc82fc5f47b6d61e4d11cb837c56cb4544e39081099fa17ad109d4"},
