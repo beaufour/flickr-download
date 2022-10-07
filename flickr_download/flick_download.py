@@ -15,7 +15,7 @@ import sys
 import time
 from pathlib import Path
 from types import FrameType
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 import flickr_api as Flickr
 import yaml
@@ -97,6 +97,35 @@ def _get_metadata_db(dirname: str) -> sqlite3.Connection:
         "CREATE TABLE IF NOT EXISTS downloads (photo_id text, size_label text, suffix text)"
     )
     return conn
+
+
+def _get_size_and_suffix(photo: Photo, size_label: Optional[str]) -> Tuple[Optional[str], str]:
+    photo_size_label: Optional[str] = size_label
+    if photo.get("video"):
+        pSizes = _get_photo_sizes(photo)
+        if pSizes and "HD MP4" in pSizes:
+            photo_size_label = "HD MP4"
+        else:
+            # Fall back for old 'short videos'. This might not exist, but
+            # Photo.save() will croak on auto-detecting these old videos, so
+            #  better not download than throwing an exception...
+            photo_size_label = "Site MP4"
+        suffix = ".mp4"
+        return (photo_size_label, ".mp4")
+
+    suffix = ".jpg"
+    # Flickr returns JPEG, except for when downloading originals. The only way
+    # to find the original type it seems is through the source filename. This
+    # is not pretty...
+    if photo_size_label == "Original" or not photo_size_label:
+        pSizes = _get_photo_sizes(photo)
+        meta = pSizes and pSizes.get("Original")
+        if meta and meta["source"]:
+            ext = os.path.splitext(meta["source"])[1]
+            if ext:
+                suffix = ext
+
+    return (photo_size_label, suffix)
 
 
 def download_set(
@@ -233,30 +262,9 @@ def do_download_photo(
         except Exception:
             logging.warning("Trouble saving photo info:", sys.exc_info()[0])
 
-    photo_size_label: Optional[str]
-    if photo.get("video"):
-        pSizes = get_photo_sizes(photo)
-        if pSizes and "HD MP4" in pSizes:
-            photo_size_label = "HD MP4"
-        else:
-            # Fall back for old 'short videos'
-            photo_size_label = "Site MP4"
-        fname = fname + ".mp4"
-    else:
-        photo_size_label = size_label
-        suffix = ".jpg"
-        # Flickr returns JPEG, except for when downloading originals. The only way to find the
-        # original type it seems is through the source filename. This is not pretty...
-        if photo_size_label == "Original" or not photo_size_label:
-            pSizes = get_photo_sizes(photo)
-            meta = pSizes and pSizes.get("Original")
-            if meta and meta["source"]:
-                ext = os.path.splitext(meta["source"])[1]
-                if ext:
-                    suffix = ext
-
-        if suffix:
-            fname = fname + suffix
+    (photo_size_label, suffix) = _get_size_and_suffix(photo, size_label)
+    if suffix:
+        fname += suffix
 
     if os.path.exists(fname):
         # TODO: Ideally we should check for file size / md5 here
@@ -416,7 +424,7 @@ def serialize_json(obj: Any) -> Any:
     return ret
 
 
-def get_photo_sizes(photo: Photo) -> Dict[str, Any]:
+def _get_photo_sizes(photo: Photo) -> Dict[str, Any]:
     for attempt in range(1, (API_RETRIES + 1)):
         try:
             return photo.getSizes()
