@@ -4,7 +4,6 @@
 #
 import argparse
 import errno
-import importlib.metadata
 import json
 import logging
 import os
@@ -34,7 +33,14 @@ CONFIG_FILE = "~/.flickr_download"
 OAUTH_TOKEN_FILE = "~/.flickr_token"
 API_RETRIES = 5
 
-__version__ = importlib.metadata.version("flickr_download")
+try:
+    import importlib.metadata
+
+    __version__ = importlib.metadata.version("flickr_download")
+except ModuleNotFoundError:
+    import importlib_metadata  # pyright: reportMissingImports=false
+
+    __version__ = importlib_metadata.version("flickr_download")
 
 
 def _init(key: str, secret: str, oauth: Optional[str]) -> bool:
