@@ -15,3 +15,7 @@ script:
 
 after_success:
   - poetry run coveralls
+
+cache:
+  directories:
+    - $HOME/.cache/pre-commit
