@@ -1,17 +1,6 @@
 # Releases
 
-To release a new version of the tool:
-
-* ensure that the version has been bumped already
-* git tag v`poetry version -s`
-* git push --tags
-* poetry build
-* poetry publish
-* poetry version patch
-* git add pyproject.toml
-* git commit -m "Bumps to version `poetry version -s`"
-* git push
-* edit the release notes on <https://github.com/beaufour/flickr-download/releases>
+To release a new version of the tool use the `./release.sh` script.
 
 ## PyPi Authentication
 
