@@ -18,7 +18,16 @@ def test_log_redaction() -> None:
 
     assert (
         _redact(
-            "flickr_api.method_call:NO HIT for cache key: signature_method=HMAC-SHA1&oauth_token=jhasdkahsdkj&oauth_consumer_key=ajshdjahkgdajshk&method=flickr.photos.getInfo&photo_id=8864635232&api_key=asjhdakjhdkjashsdk&format=json&nojsoncallback=1&oauth_body_hash=jashdkashsdkjasda&oauth_signature_method=HMAC-SHA1"
+            "flickr_api.method_call:NO HIT for cache key:"
+            "signature_method=HMAC-SHA1&oauth_token=jhasdkahsdkj&"
+            "oauth_consumer_key=ajshdjahkgdajshk&method=flickr.photos.getInfo&"
+            "photo_id=8864635232&api_key=asjhdakjhdkjashsdk&format=json&"
+            "nojsoncallback=1&oauth_body_hash=jashdkashsdkjasda&"
+            "oauth_signature_method=HMAC-SHA1"
         )
-        == "flickr_api.method_call:NO HIT for cache key: signature_method=HMAC-SHA1&oauth_token=***&oauth_consumer_key=***&method=flickr.photos.getInfo&photo_id=8864635232&api_key=***&format=json&nojsoncallback=1&oauth_body_hash=***&oauth_signature_method=HMAC-SHA1"
+        == "flickr_api.method_call:NO HIT for cache key:"
+        "signature_method=HMAC-SHA1&oauth_token=***&oauth_consumer_key=***&"
+        "method=flickr.photos.getInfo&photo_id=8864635232&api_key=***&"
+        "format=json&nojsoncallback=1&oauth_body_hash=***&"
+        "oauth_signature_method=HMAC-SHA1"
     )
