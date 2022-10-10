@@ -27,6 +27,7 @@ from flickr_download.filename_handlers import (
     get_filename_handler,
     get_filename_handler_help,
 )
+from flickr_download.logging_utils import APIKeysRedacter
 from flickr_download.utils import get_dirname, get_full_path, get_photo_page, set_file_time
 
 CONFIG_FILE = "~/.flickr_download"
@@ -449,6 +450,9 @@ def _get_photo_sizes(photo: Photo) -> Dict[str, Any]:
 
 def main() -> int:
     logging.basicConfig(level=logging.INFO)
+    for handler in logging.root.handlers:
+        handler.setFormatter(APIKeysRedacter(handler.formatter))
+
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter,
         description="Downloads one or more Flickr photo sets.\n"
