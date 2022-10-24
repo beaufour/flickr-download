@@ -541,14 +541,12 @@ def main() -> int:
         help="Store information about downloads in a metadata file (helps with retrying downloads)",
     )
     parser.add_argument("-v", "--verbose", action="store_true", help="Turns on verbose logging")
-    parser.add_argument("--version", action="store_true", help="Lists the version of the tool")
+    parser.add_argument(
+        "--version", action="version", version=__version__, help="Lists the version of the tool"
+    )
     parser.set_defaults(**_load_defaults())
 
     args = parser.parse_args()
-
-    if args.version:
-        print(__version__)
-        return 0
 
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
