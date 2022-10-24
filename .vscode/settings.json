@@ -5,6 +5,7 @@
         "dateutil",
         "easydict",
         "ENOENT",
+        "Exif",
         "flickr",
         "mktime",
         "mypath",

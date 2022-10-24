@@ -262,10 +262,16 @@ def do_download_photo(
 
     if save_json:
         try:
-            logging.info(f"Saving photo info: {jsonFname}")
-            jsonFile = open(jsonFname, "w")
-            jsonFile.write(json.dumps(photo, default=serialize_json, indent=2, sort_keys=True))
-            jsonFile.close()
+            if Path(jsonFname).exists():
+                logging.info(f"Skipping {jsonFname}, as it exists already")
+            else:
+                with open(jsonFname, "w") as jsonFile:
+                    logging.info(f"Saving photo info: {jsonFname}")
+                    photo_data = photo.__dict__.copy()
+                    photo_data["exif"] = photo.getExif()
+                    jsonFile.write(
+                        json.dumps(photo_data, default=serialize_json, indent=2, sort_keys=True)
+                    )
         except Exception:
             logging.warning("Trouble saving photo info:", sys.exc_info()[0])
 
