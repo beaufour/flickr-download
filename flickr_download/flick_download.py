@@ -1,7 +1,6 @@
 #!/usr/bin/env python
-#
-# Util to download a full Flickr set.
-#
+"""Main functionality of the util."""
+
 import argparse
 import errno
 import json
@@ -397,6 +396,7 @@ def print_sets(username: str) -> None:
 
 
 def get_cache(path: str) -> SimpleCache:
+    """Loads the cache from disk, or returns an empty one if not found."""
     cache = SimpleCache(max_entries=20000, timeout=3600)
     cache_path = Path(path)
     if not cache_path.exists():
@@ -411,6 +411,7 @@ def get_cache(path: str) -> SimpleCache:
 
 
 def save_cache(path: str, cache: SimpleCache) -> bool:
+    """Saves the cache to disk."""
     db = {"storage": cache.storage, "expire_info": cache.expire_info}
     cache_path = Path(path)
     with cache_path.open("wb") as handle:
@@ -456,6 +457,7 @@ def _get_photo_sizes(photo: Photo) -> Dict[str, Any]:
 
 
 def main() -> int:
+    """Main entry point."""
     logging.basicConfig(level=logging.INFO)
     for handler in logging.root.handlers:
         handler.setFormatter(APIKeysRedacter(handler.formatter))

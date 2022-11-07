@@ -1,3 +1,4 @@
+"""Utilities for Python logger."""
 import re
 from logging import Formatter, LogRecord
 from typing import Optional
