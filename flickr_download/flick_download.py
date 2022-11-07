@@ -108,8 +108,8 @@ def _get_metadata_db(dirname: str) -> sqlite3.Connection:
 def _get_size_and_suffix(photo: Photo, size_label: Optional[str]) -> Tuple[Optional[str], str]:
     photo_size_label: Optional[str] = size_label
     if photo.get("video"):
-        pSizes = _get_photo_sizes(photo)
-        if pSizes and "HD MP4" in pSizes:
+        photo_sizes = _get_photo_sizes(photo)
+        if photo_sizes and "HD MP4" in photo_sizes:
             photo_size_label = "HD MP4"
         else:
             # Fall back for old 'short videos'. This might not exist, but
@@ -124,8 +124,8 @@ def _get_size_and_suffix(photo: Photo, size_label: Optional[str]) -> Tuple[Optio
     # to find the original type it seems is through the source filename. This
     # is not pretty...
     if photo_size_label == "Original" or not photo_size_label:
-        pSizes = _get_photo_sizes(photo)
-        meta = pSizes and pSizes.get("Original")
+        photo_sizes = _get_photo_sizes(photo)
+        meta = photo_sizes and photo_sizes.get("Original")
         if meta and meta["source"]:
             ext = os.path.splitext(meta["source"])[1]
             if ext:
@@ -249,7 +249,7 @@ def do_download_photo(
             return
 
     fname = get_full_path(dirname, get_filename(pset, photo, suffix))
-    jsonFname = fname + ".json"
+    json_fname = fname + ".json"
 
     if not photo["loaded"]:
         # trying not trigger two calls to Photo.getInfo here, as it will if it was already loaded
@@ -261,14 +261,14 @@ def do_download_photo(
 
     if save_json:
         try:
-            if Path(jsonFname).exists():
-                logging.info("Skipping %s, as it exists already", jsonFname)
+            if Path(json_fname).exists():
+                logging.info("Skipping %s, as it exists already", json_fname)
             else:
-                with open(jsonFname, "w", encoding="utf-8") as jsonFile:
-                    logging.info("Saving photo info: %s", jsonFname)
+                with open(json_fname, "w", encoding="utf-8") as json_file:
+                    logging.info("Saving photo info: %s", json_fname)
                     photo_data = photo.__dict__.copy()
                     photo_data["exif"] = photo.getExif()
-                    jsonFile.write(
+                    json_file.write(
                         json.dumps(photo_data, default=serialize_json, indent=2, sort_keys=True)
                     )
         except Exception:
@@ -392,8 +392,8 @@ def print_sets(username: str) -> None:
     """
     user = find_user(username)
     photosets = Walker(user.getPhotosets)
-    for set in photosets:
-        print(f"{set.id} - {set.title}")
+    for photoset in photosets:
+        print(f"{photoset.id} - {photoset.title}")
 
 
 def get_cache(path: str) -> SimpleCache:
@@ -404,19 +404,19 @@ def get_cache(path: str) -> SimpleCache:
         return cache
 
     with cache_path.open("rb") as handle:
-        db = pickle.load(handle)
-        cache.storage = db["storage"]
+        database = pickle.load(handle)
+        cache.storage = database["storage"]
         logging.debug("Cache loaded from: %s", cache_path.resolve())
-        cache.expire_info = db["expire_info"]
+        cache.expire_info = database["expire_info"]
         return cache
 
 
 def save_cache(path: str, cache: SimpleCache) -> bool:
     """Saves the cache to disk."""
-    db = {"storage": cache.storage, "expire_info": cache.expire_info}
+    database = {"storage": cache.storage, "expire_info": cache.expire_info}
     cache_path = Path(path)
     with cache_path.open("wb") as handle:
-        pickle.dump(db, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(database, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     logging.debug("Cache saved to %s", cache_path.resolve())
     return True
