@@ -83,7 +83,7 @@ def _load_defaults() -> Dict[str, Any]:
     filename = os.path.expanduser(CONFIG_FILE)
     logging.debug("Loading configuration from %s", filename)
     try:
-        with open(filename, "r") as cfile:
+        with open(filename, "r", encoding="utf-8") as cfile:
             vals = yaml.load(cfile.read(), Loader=yaml.FullLoader)
             return vals
     except yaml.YAMLError as ex:
@@ -264,7 +264,7 @@ def do_download_photo(
             if Path(jsonFname).exists():
                 logging.info("Skipping %s, as it exists already", jsonFname)
             else:
-                with open(jsonFname, "w") as jsonFile:
+                with open(jsonFname, "w", encoding="utf-8") as jsonFile:
                     logging.info("Saving photo info: %s", jsonFname)
                     photo_data = photo.__dict__.copy()
                     photo_data["exif"] = photo.getExif()
