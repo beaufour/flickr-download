@@ -566,10 +566,10 @@ def main() -> int:
         cache = get_cache(args.cache)
         Flickr.enable_cache(cache)
 
-        def signal_handler(signal: int, frame: Optional[FrameType]) -> Any:
-            logging.debug("Hit signal handler for signal %s", signal)
+        def signal_handler(sig: int, _: Optional[FrameType]) -> Any:
+            logging.debug("Hit signal handler for signal %s", sig)
             save_cache(args.cache, cache)
-            sys.exit(signal)
+            sys.exit(sig)
 
         signal.signal(signal.SIGINT, signal_handler)
 
