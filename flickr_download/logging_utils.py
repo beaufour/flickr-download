@@ -23,6 +23,7 @@ class APIKeysRedacter(Formatter):
     framework."""
 
     def __init__(self, orig_formatter: Optional[Formatter]):
+        Formatter.__init__(self)
         self._orig_formatter = orig_formatter
 
     def format(self, record: LogRecord) -> str:
