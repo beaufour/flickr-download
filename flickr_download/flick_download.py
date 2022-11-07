@@ -358,7 +358,7 @@ def download_user(
     @param save_json: save photo info as .json file
     """
     user = find_user(username)
-    photosets = Walker(user.getPhotosets)
+    photosets = Walker(user.getPhotosets)  # pylint: disable=E1101
     for photoset in photosets:
         download_set(photoset.id, get_filename, size_label, skip_download, save_json)
 
@@ -391,7 +391,7 @@ def print_sets(username: str) -> None:
     @param username: the name of the user
     """
     user = find_user(username)
-    photosets = Walker(user.getPhotosets)
+    photosets = Walker(user.getPhotosets)  # pylint: disable=E1101
     for photoset in photosets:
         print(f"{photoset.id} - {photoset.title}")
 
