@@ -328,6 +328,7 @@ def download_photo(
 
 
 def find_user(userid: str) -> Person:
+    """Tries to find the Person object for a given user string."""
     if (
         userid.startswith("https://")
         or userid.startswith("www.flickr.com")
