@@ -82,16 +82,16 @@ def _load_defaults() -> Dict[str, Any]:
     @return: default parameters
     """
     filename = os.path.expanduser(CONFIG_FILE)
-    logging.debug(f"Loading configuration from {filename}")
+    logging.debug("Loading configuration from %s", filename)
     try:
         with open(filename, "r") as cfile:
             vals = yaml.load(cfile.read(), Loader=yaml.FullLoader)
             return vals
     except yaml.YAMLError as ex:
-        logging.warning(f"Could not parse configuration file: {ex}")
+        logging.warning("Could not parse configuration file: %s", ex)
     except IOError as ex:
         if ex.errno != errno.ENOENT:
-            logging.warning(f"Could not open configuration file: {ex}")
+            logging.warning("Could not open configuration file: %s", ex)
         else:
             logging.debug("No config file")
 
@@ -180,14 +180,14 @@ def download_list(
 
     suffix = " ({})".format(size_label) if size_label else ""
 
-    logging.info(f"Downloading {photos_title}")
+    logging.info("Downloading %s", photos_title)
     dirname = get_dirname(photos_title)
     if not os.path.exists(dirname):
         try:
             os.mkdir(dirname)
         except OSError as err:
             if err.errno == errno.ENAMETOOLONG:
-                logging.warning(f"WARNING: Truncating too long directory name: {dirname}")
+                logging.warning("WARNING: Truncating too long directory name: %s", dirname)
                 # Not the most fantastic handling here, but it is surprisingly hard to get the max
                 # length in an OS-agnostic way... Assuming that most OSes can handle at least 200
                 # chars...
@@ -246,7 +246,7 @@ def do_download_photo(
             "SELECT * FROM downloads WHERE photo_id = ? AND size_label = ? AND suffix = ?",
             (photo.id, size_label or "", orig_suffix),
         ).fetchone():
-            logging.info(f"Skipping download of already downloaded photo with ID: {photo.id}")
+            logging.info("Skipping download of already downloaded photo with ID: %s", photo.id)
             return
 
     fname = get_full_path(dirname, get_filename(pset, photo, suffix))
@@ -257,23 +257,23 @@ def do_download_photo(
         try:
             photo.load()
         except FlickrError:
-            logging.info(f"Skipping {fname}, because cannot get info from Flickr")
+            logging.info("Skipping %s, because cannot get info from Flickr", fname)
             return
 
     if save_json:
         try:
             if Path(jsonFname).exists():
-                logging.info(f"Skipping {jsonFname}, as it exists already")
+                logging.info("Skipping %s, as it exists already", jsonFname)
             else:
                 with open(jsonFname, "w") as jsonFile:
-                    logging.info(f"Saving photo info: {jsonFname}")
+                    logging.info("Saving photo info: %s", jsonFname)
                     photo_data = photo.__dict__.copy()
                     photo_data["exif"] = photo.getExif()
                     jsonFile.write(
                         json.dumps(photo_data, default=serialize_json, indent=2, sort_keys=True)
                     )
         except Exception:
-            logging.warning("Trouble saving photo info:", sys.exc_info()[0])
+            logging.warning("Trouble saving photo info: %s", sys.exc_info()[0])
 
     (photo_size_label, suffix) = _get_size_and_suffix(photo, size_label)
     if suffix:
@@ -282,20 +282,20 @@ def do_download_photo(
     if os.path.exists(fname):
         # TODO: Ideally we should check for file size / md5 here
         # to handle failed downloads.
-        logging.info(f"Skipping {fname}, as it exists already")
+        logging.info("Skipping %s, as it exists already", fname)
         return
 
-    logging.info(f"Saving: {fname} ({get_photo_page(photo)})")
+    logging.info("Saving: %s (%s)", fname, get_photo_page(photo))
     if skip_download:
         return
 
     try:
         photo.save(fname, photo_size_label)
     except IOError as ex:
-        logging.error(f"IO error saving photo: {ex}")
+        logging.error("IO error saving photo: %s", ex)
         return
     except FlickrError as ex:
-        logging.error(f"Flickr error saving photo: {ex}")
+        logging.error("Flickr error saving photo: %s", ex)
         return
 
     # Set file times to when the photo was taken
@@ -405,7 +405,7 @@ def get_cache(path: str) -> SimpleCache:
     with cache_path.open("rb") as handle:
         db = pickle.load(handle)
         cache.storage = db["storage"]
-        logging.debug(f"Cache loaded from: {cache_path.resolve()}")
+        logging.debug("Cache loaded from: %s", cache_path.resolve())
         cache.expire_info = db["expire_info"]
         return cache
 
@@ -416,7 +416,7 @@ def save_cache(path: str, cache: SimpleCache) -> bool:
     with cache_path.open("wb") as handle:
         pickle.dump(db, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-    logging.debug(f"Cache saved to {cache_path.resolve()}")
+    logging.debug("Cache saved to %s", cache_path.resolve())
     return True
 
 
@@ -443,9 +443,10 @@ def _get_photo_sizes(photo: Photo) -> Dict[str, Any]:
             return photo.getSizes()
         except FlickrError as ex:
             logging.warning(
-                f"Flickr error getting photo size: {ex}, "
-                f"attempt: #{attempt}, "
-                f"attempts left: {(API_RETRIES - attempt)}"
+                "Flickr error getting photo size: %s, attempt: #%d, attempts left: %d",
+                ex,
+                attempt,
+                API_RETRIES - attempt,
             )
             time.sleep(1)
             if attempt >= API_RETRIES:
@@ -563,7 +564,7 @@ def main() -> int:
         Flickr.enable_cache(cache)
 
         def signal_handler(signal: int, frame: Optional[FrameType]) -> Any:
-            logging.debug(f"Hit signal handler for signal {signal}")
+            logging.debug("Hit signal handler for signal %s", signal)
             save_cache(args.cache, cache)
             sys.exit(signal)
 

@@ -66,7 +66,7 @@ def set_file_time(fname: str, taken_str: str) -> None:
     try:
         taken_unix = time.mktime(taken.timetuple())
     except OverflowError:
-        logging.warning(f"Cannot set file time to: {taken}")
+        logging.warning("Cannot set file time to: %s", taken)
         return
 
     os.utime(fname, (taken_unix, taken_unix))
