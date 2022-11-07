@@ -177,7 +177,7 @@ def download_list(
 
     photos = Walker(pset.getPhotos)
 
-    suffix = " ({})".format(size_label) if size_label else ""
+    suffix = f" ({size_label})" if size_label else ""
 
     logging.info("Downloading %s", photos_title)
     dirname = get_dirname(photos_title)
@@ -323,7 +323,7 @@ def download_photo(
     @param save_json: save photo info as .json file
     """
     photo = Flickr.Photo(id=photo_id)
-    suffix = " ({})".format(size_label) if size_label else ""
+    suffix = f" ({size_label})" if size_label else ""
     do_download_photo(".", None, photo, size_label, suffix, get_filename, skip_download, save_json)
 
 

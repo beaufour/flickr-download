@@ -33,7 +33,7 @@ def title(pset: Optional[Photoset], photo: Photo, suffix: Optional[str]) -> str:
     if not photo.title:
         return idd(pset, photo, suffix)
 
-    return get_filename("{0}{1}".format(photo.title, suffix))
+    return get_filename(f"{photo.title}{suffix}")
 
 
 def idd(pset: Optional[Photoset], photo: Photo, suffix: Optional[str]) -> str:
@@ -44,7 +44,7 @@ def idd(pset: Optional[Photoset], photo: Photo, suffix: Optional[str]) -> str:
     @param suffice: optional suffix
     @return: the filename
     """
-    return "{0}{1}".format(photo.id, suffix)
+    return f"{photo.id}{suffix}"
 
 
 def title_and_id(pset: Optional[Photoset], photo: Photo, suffix: Optional[str]) -> str:
@@ -58,7 +58,7 @@ def title_and_id(pset: Optional[Photoset], photo: Photo, suffix: Optional[str]) 
     if not photo.title:
         return idd(pset, photo, suffix)
 
-    return get_filename("{0}-{1}{2}".format(photo.title, photo.id, suffix))
+    return get_filename(f"{photo.title}-{photo.id}{suffix}")
 
 
 INCREMENT_INDEX: Dict[Any, Any] = defaultdict(lambda: defaultdict(int))
@@ -81,9 +81,9 @@ def title_increment(pset: Optional[Photoset], photo: Photo, suffix: Optional[str
     index = pset.id if pset else "1"
     photo_index = INCREMENT_INDEX[index][photo.title]
     if photo_index:
-        extra = "({0})".format(photo_index)
+        extra = f"({photo.index})"
     INCREMENT_INDEX[index][photo.title] += 1
-    return get_filename("{0}{1}{2}".format(photo.title, suffix, extra))
+    return get_filename(f"{photo.title}{suffix}{extra}")
 
 
 HANDLERS = {
@@ -111,11 +111,6 @@ def get_filename_handler_help() -> str:
     ret = []
     HANDLERS.items()
     for name, func in HANDLERS.items():
-        ret.append(
-            "  {handler} - {doc}{default}".format(
-                handler=name,
-                doc=_get_short_docstring(func.__doc__),
-                default=(" (DEFAULT)" if name == DEFAULT_HANDLER else ""),
-            )
-        )
+        default = " (DEFAULT)" if name == DEFAULT_HANDLER else ""
+        ret.append(f"  {name} - {_get_short_docstring(func.__doc__)}{default}")
     return "Naming modes:\n" + "\n".join(ret)
