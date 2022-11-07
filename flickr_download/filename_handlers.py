@@ -36,7 +36,7 @@ def title(pset: Optional[Photoset], photo: Photo, suffix: Optional[str]) -> str:
     return get_filename(f"{photo.title}{suffix}")
 
 
-def idd(pset: Optional[Photoset], photo: Photo, suffix: Optional[str]) -> str:
+def idd(_: Optional[Photoset], photo: Photo, suffix: Optional[str]) -> str:
     """Name file after photo id.
 
     @param pset: the photoset
