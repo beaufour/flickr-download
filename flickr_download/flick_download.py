@@ -10,7 +10,6 @@ import pickle
 import signal
 import sqlite3
 import sys
-import time
 from pathlib import Path
 from types import FrameType
 from typing import Any, Dict, Optional
@@ -411,24 +410,6 @@ def serialize_json(obj: Any) -> Any:
     except Exception:
         ret = obj
     return ret
-
-
-def _get_photo_sizes(photo: Photo) -> Dict[str, Any]:
-    for attempt in range(1, (API_RETRIES + 1)):
-        try:
-            return photo.getSizes()
-        except FlickrError as ex:
-            logging.warning(
-                "Flickr error getting photo size: %s, attempt: #%d, attempts left: %d",
-                ex,
-                attempt,
-                API_RETRIES - attempt,
-            )
-            time.sleep(1)
-            if attempt >= API_RETRIES:
-                raise
-
-    return {}
 
 
 def main() -> int:
