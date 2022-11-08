@@ -61,6 +61,20 @@ def title_and_id(pset: Optional[Photoset], photo: Photo, suffix: Optional[str]) 
     return get_filename(f"{photo.title}-{photo.id}{suffix}")
 
 
+def id_and_title(pset: Optional[Photoset], photo: Photo, suffix: Optional[str]) -> str:
+    """Name file after photo id and title.
+
+    @param pset: Flickr.Photoset, the photoset
+    @param photo: Flickr.Photo, the photo
+    @param suffix: str, optional suffix
+    @return: str, the filename
+    """
+    if not photo.title:
+        return idd(pset, photo, suffix)
+
+    return get_filename(f"{photo.id}-{photo.title}{suffix}")
+
+
 INCREMENT_INDEX: Dict[Any, Any] = defaultdict(lambda: defaultdict(int))
 """Photoset -> filename index for title_increment function duplicate tracking"""
 
@@ -90,6 +104,7 @@ HANDLERS = {
     "title": title,
     "id": idd,
     "title_and_id": title_and_id,
+    "id_and_title": id_and_title,
     "title_increment": title_increment,
 }
 
