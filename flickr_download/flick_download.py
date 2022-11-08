@@ -245,6 +245,13 @@ def do_download_photo(
         except Exception:
             logging.warning("Trouble saving photo info: %s", sys.exc_info()[0])
 
+    if not size_label and photo._getLargestSizeLabel() == "Video Player":
+        # For old videos there doesn't seem to be an actual video url
+        # available. The largest video size ends up being a SWF video player,
+        # and it's the SWF that'll be downloaded...
+        logging.error("Video not available for: %s", get_photo_page(photo))
+        return
+
     if os.path.exists(fname):
         # TODO: Ideally we should check for file size / md5 here
         # to handle failed downloads.
