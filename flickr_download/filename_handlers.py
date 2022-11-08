@@ -27,7 +27,7 @@ def title(pset: Optional[Photoset], photo: Photo, suffix: Optional[str]) -> str:
 
     @param pset: the photoset
     @param photo: the photo
-    @param suffice: optional suffix
+    @param suffix: optional suffix
     @return: the filename
     """
     if not photo.title:
@@ -41,7 +41,7 @@ def idd(_: Optional[Photoset], photo: Photo, suffix: Optional[str]) -> str:
 
     @param pset: the photoset
     @param photo: the photo
-    @param suffice: optional suffix
+    @param suffix: optional suffix
     @return: the filename
     """
     return f"{photo.id}{suffix}"
@@ -52,7 +52,7 @@ def title_and_id(pset: Optional[Photoset], photo: Photo, suffix: Optional[str]) 
 
     @param pset: Flickr.Photoset, the photoset
     @param photo: Flickr.Photo, the photo
-    @param suffice: str, optional suffix
+    @param suffix: str, optional suffix
     @return: str, the filename
     """
     if not photo.title:
@@ -85,7 +85,7 @@ def title_increment(pset: Optional[Photoset], photo: Photo, suffix: Optional[str
 
     @param pset: Flickr.Photoset, the photoset
     @param photo: Flickr.Photo, the photo
-    @param suffice: str, optional suffix
+    @param suffix: str, optional suffix
     @return: str, the filename
     """
     if not photo.title:
