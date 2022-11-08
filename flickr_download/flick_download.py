@@ -6,19 +6,15 @@ import errno
 import json
 import logging
 import os
-import pickle
-import signal
 import sqlite3
 import sys
 from pathlib import Path
-from types import FrameType
 from typing import Any, Dict, Optional
 
 import flickr_api as Flickr
 import yaml
-from flickr_api.cache import SimpleCache
 from flickr_api.flickrerrors import FlickrError
-from flickr_api.objects import Person, Photo, Photoset, Tag, Walker
+from flickr_api.objects import Person, Photo, Photoset, Walker
 
 from flickr_download.filename_handlers import (
     FilenameHandler,
@@ -26,7 +22,15 @@ from flickr_download.filename_handlers import (
     get_filename_handler_help,
 )
 from flickr_download.logging_utils import APIKeysRedacter
-from flickr_download.utils import get_dirname, get_full_path, get_photo_page, set_file_time
+from flickr_download.utils import (
+    get_dirname,
+    get_full_path,
+    get_photo_page,
+    init_cache,
+    save_cache,
+    serialize_json,
+    set_file_time,
+)
 
 CONFIG_FILE = "~/.flickr_download"
 OAUTH_TOKEN_FILE = "~/.flickr_token"
@@ -369,54 +373,8 @@ def print_sets(username: str) -> None:
         print(f"{photoset.id} - {photoset.title}")
 
 
-def get_cache(path: str) -> SimpleCache:
-    """Loads the cache from disk, or returns an empty one if not found."""
-    cache = SimpleCache(max_entries=20000, timeout=3600)
-    cache_path = Path(path)
-    if not cache_path.exists():
-        return cache
-
-    with cache_path.open("rb") as handle:
-        database = pickle.load(handle)
-        cache.storage = database["storage"]
-        logging.debug("Cache loaded from: %s", cache_path.resolve())
-        cache.expire_info = database["expire_info"]
-        return cache
-
-
-def save_cache(path: str, cache: SimpleCache) -> bool:
-    """Saves the cache to disk."""
-    database = {"storage": cache.storage, "expire_info": cache.expire_info}
-    cache_path = Path(path)
-    with cache_path.open("wb") as handle:
-        pickle.dump(database, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-    logging.debug("Cache saved to %s", cache_path.resolve())
-    return True
-
-
-def serialize_json(obj: Any) -> Any:
-    """JSON serializer for objects not serializable by default json code."""
-
-    if isinstance(obj, Person):
-        return obj.username
-
-    if isinstance(obj, Tag):
-        return obj.text
-        # return obj.id +"_"+ obj.text
-
-    try:
-        ret = obj.__dict__
-    except Exception:
-        ret = obj
-    return ret
-
-
-def main() -> int:
-    """Main entry point."""
-    logging.basicConfig(level=logging.INFO)
-    for handler in logging.root.handlers:
-        handler.setFormatter(APIKeysRedacter(handler.formatter))
+def _get_arg_parser() -> argparse.ArgumentParser:
+    """Gets a parser for the command line arguments."""
 
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter,
@@ -511,24 +469,23 @@ def main() -> int:
     )
     parser.set_defaults(**_load_defaults())
 
-    args = parser.parse_args()
+    return parser
 
+
+def main() -> int:
+    """Main entry point."""
+    logging.basicConfig(level=logging.INFO)
+    for handler in logging.root.handlers:
+        handler.setFormatter(APIKeysRedacter(handler.formatter))
+
+    parser = _get_arg_parser()
+    args = parser.parse_args()
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
 
     cache = None
     if args.cache:
-        cache = get_cache(args.cache)
-        Flickr.enable_cache(cache)
-
-        def signal_handler(sig: int, _: Optional[FrameType]) -> Any:
-            logging.debug("Hit signal handler for signal %s", sig)
-            save_cache(args.cache, cache)
-            sys.exit(sig)
-
-        signal.signal(signal.SIGINT, signal_handler)
-
-        logging.info("Caching is enabled")
+        cache = init_cache(args.cache)
 
     if args.list_naming:
         print(get_filename_handler_help())
@@ -608,7 +565,7 @@ def main() -> int:
             save_cache(args.cache, cache)
         return 0
 
-    print("ERROR: Must pass either --list or --download\n", file=sys.stderr)
+    print("ERROR: Nothing to do?\n", file=sys.stderr)
     parser.print_help()
     return 1
 

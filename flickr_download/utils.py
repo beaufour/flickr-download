@@ -3,11 +3,80 @@ from __future__ import annotations
 
 import logging
 import os
+import pickle
+import signal
+import sys
 import time
+from pathlib import Path
+from types import FrameType
+from typing import Any, Optional
 
+import flickr_api as Flickr
 from dateutil import parser
-from flickr_api.objects import Photo
+from flickr_api.cache import SimpleCache
+from flickr_api.objects import Person, Photo, Tag
 from pathvalidate import sanitize_filename, sanitize_filepath
+
+
+def get_cache(path: str) -> SimpleCache:
+    """Loads the cache from disk, or returns an empty one if not found."""
+    cache = SimpleCache(max_entries=20000, timeout=3600)
+    cache_path = Path(path)
+    if not cache_path.exists():
+        return cache
+
+    with cache_path.open("rb") as handle:
+        database = pickle.load(handle)
+        cache.storage = database["storage"]
+        logging.debug("Cache loaded from: %s", cache_path.resolve())
+        cache.expire_info = database["expire_info"]
+        return cache
+
+
+def save_cache(path: str, cache: SimpleCache) -> bool:
+    """Saves the cache to disk."""
+    database = {"storage": cache.storage, "expire_info": cache.expire_info}
+    cache_path = Path(path)
+    with cache_path.open("wb") as handle:
+        pickle.dump(database, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    logging.debug("Cache saved to %s", cache_path.resolve())
+    return True
+
+
+def init_cache(path: str) -> SimpleCache:
+    """Initialize the cache and install a signal handler to automatically save
+    it."""
+    cache = get_cache(path)
+    Flickr.enable_cache(cache)
+
+    def signal_handler(sig: int, _: Optional[FrameType]) -> Any:
+        logging.debug("Hit signal handler for signal %s", sig)
+        save_cache(path, cache)
+        sys.exit(sig)
+
+    signal.signal(signal.SIGINT, signal_handler)
+
+    logging.info("Caching is enabled")
+
+    return cache
+
+
+def serialize_json(obj: Any) -> Any:
+    """JSON serializer for objects not serializable by default json code."""
+
+    if isinstance(obj, Person):
+        return obj.username
+
+    if isinstance(obj, Tag):
+        return obj.text
+        # return obj.id +"_"+ obj.text
+
+    try:
+        ret = obj.__dict__
+    except Exception:
+        ret = obj
+    return ret
 
 
 def replace_path_sep(name: str) -> str:
