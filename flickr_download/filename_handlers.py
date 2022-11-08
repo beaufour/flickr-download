@@ -1,7 +1,7 @@
 """Defines a set of functions that handle naming of the downloaded files."""
 
 from collections import defaultdict
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from flickr_api.objects import Photo, Photoset
 
@@ -114,3 +114,8 @@ def get_filename_handler_help() -> str:
         default = " (DEFAULT)" if name == DEFAULT_HANDLER else ""
         ret.append(f"  {name} - {_get_short_docstring(func.__doc__)}{default}")
     return "Naming modes:\n" + "\n".join(ret)
+
+
+def get_filename_handler_names() -> List[str]:
+    """Returns list of filename handlers."""
+    return list(HANDLERS.keys())

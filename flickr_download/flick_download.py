@@ -20,6 +20,7 @@ from flickr_download.filename_handlers import (
     FilenameHandler,
     get_filename_handler,
     get_filename_handler_help,
+    get_filename_handler_names,
 )
 from flickr_download.logging_utils import APIKeysRedacter
 from flickr_download.utils import (
@@ -437,7 +438,13 @@ def _get_arg_parser() -> argparse.ArgumentParser:
         default=None,
         help="Quality of the picture",
     )
-    parser.add_argument("-n", "--naming", type=str, metavar="NAMING_MODE", help="Photo naming mode")
+    parser.add_argument(
+        "-n",
+        "--naming",
+        choices=get_filename_handler_names(),
+        metavar="NAMING_MODE",
+        help="Photo naming mode",
+    )
     parser.add_argument("-m", "--list_naming", action="store_true", help="List naming modes")
     parser.add_argument(
         "-o",
