@@ -35,7 +35,6 @@ from flickr_download.utils import (
 
 CONFIG_FILE = "~/.flickr_download"
 OAUTH_TOKEN_FILE = "~/.flickr_token"
-API_RETRIES = 5
 
 try:
     import importlib.metadata
