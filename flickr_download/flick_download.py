@@ -13,7 +13,7 @@ import sys
 import time
 from pathlib import Path
 from types import FrameType
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional
 
 import flickr_api as Flickr
 import yaml
@@ -103,35 +103,6 @@ def _get_metadata_db(dirname: str) -> sqlite3.Connection:
         "CREATE TABLE IF NOT EXISTS downloads (photo_id text, size_label text, suffix text)"
     )
     return conn
-
-
-def _get_size_and_suffix(photo: Photo, size_label: Optional[str]) -> Tuple[Optional[str], str]:
-    photo_size_label: Optional[str] = size_label
-    if photo.get("video"):
-        photo_sizes = _get_photo_sizes(photo)
-        if photo_sizes and "HD MP4" in photo_sizes:
-            photo_size_label = "HD MP4"
-        else:
-            # Fall back for old 'short videos'. This might not exist, but
-            # Photo.save() will croak on auto-detecting these old videos, so
-            #  better not download than throwing an exception...
-            photo_size_label = "Site MP4"
-        suffix = ".mp4"
-        return (photo_size_label, ".mp4")
-
-    suffix = ".jpg"
-    # Flickr returns JPEG, except for when downloading originals. The only way
-    # to find the original type it seems is through the source filename. This
-    # is not pretty...
-    if photo_size_label == "Original" or not photo_size_label:
-        photo_sizes = _get_photo_sizes(photo)
-        meta = photo_sizes and photo_sizes.get("Original")
-        if meta and meta["source"]:
-            ext = os.path.splitext(meta["source"])[1]
-            if ext:
-                suffix = ext
-
-    return (photo_size_label, suffix)
 
 
 def download_set(
@@ -239,16 +210,16 @@ def do_download_photo(
     @param save_json: save photo info as .json file
     @param metadata_db: optional metadata database to record downloads in
     """
-    orig_suffix = suffix or ""
     if metadata_db:
         if metadata_db.execute(
             "SELECT * FROM downloads WHERE photo_id = ? AND size_label = ? AND suffix = ?",
-            (photo.id, size_label or "", orig_suffix),
+            (photo.id, size_label or "", suffix),
         ).fetchone():
             logging.info("Skipping download of already downloaded photo with ID: %s", photo.id)
             return
 
     fname = get_full_path(dirname, get_filename(pset, photo, suffix))
+    fname = photo._getOutputFilename(fname, size_label)
     json_fname = fname + ".json"
 
     if not photo["loaded"]:
@@ -274,10 +245,6 @@ def do_download_photo(
         except Exception:
             logging.warning("Trouble saving photo info: %s", sys.exc_info()[0])
 
-    (photo_size_label, suffix) = _get_size_and_suffix(photo, size_label)
-    if suffix:
-        fname += suffix
-
     if os.path.exists(fname):
         # TODO: Ideally we should check for file size / md5 here
         # to handle failed downloads.
@@ -289,7 +256,7 @@ def do_download_photo(
         return
 
     try:
-        photo.save(fname, photo_size_label)
+        photo.save(fname, size_label)
     except IOError as ex:
         logging.error("IO error saving photo: %s", ex)
         return
@@ -302,7 +269,7 @@ def do_download_photo(
 
     if metadata_db:
         metadata_db.execute(
-            "INSERT INTO downloads VALUES (?, ?, ?)", (photo.id, size_label or "", orig_suffix)
+            "INSERT INTO downloads VALUES (?, ?, ?)", (photo.id, size_label or "", suffix)
         )
         metadata_db.commit()
 
