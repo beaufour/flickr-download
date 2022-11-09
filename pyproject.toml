@@ -24,7 +24,7 @@ coverage = "^6.5.0"
 python-coveralls = "^2.9.3"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^5.2"
+pytest = "^7.2"
 flake8 = "^4.0.1"
 black = "^22.8.0"
 pre-commit = "^2.20.0"
