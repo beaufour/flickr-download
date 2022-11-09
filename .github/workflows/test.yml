@@ -28,6 +28,7 @@ jobs:
       - name: Run tests
         run: |
           poetry run coverage run -m pytest
+          poetry run coverage lcov -o coverage/lcov.info
       - name: Coveralls
         uses: coverallsapp/github-action@master
         with:
