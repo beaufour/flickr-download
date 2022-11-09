@@ -95,7 +95,7 @@ def title_increment(pset: Optional[Photoset], photo: Photo, suffix: Optional[str
     index = pset.id if pset else "1"
     photo_index = INCREMENT_INDEX[index][photo.title]
     if photo_index:
-        extra = f"({photo.index})"
+        extra = f"({photo_index})"
     INCREMENT_INDEX[index][photo.title] += 1
     return get_filename(f"{photo.title}{suffix}{extra}")
 

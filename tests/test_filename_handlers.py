@@ -8,7 +8,7 @@ from flickr_download.filename_handlers import get_filename_handler
 class TestFilenameHandlers:
     def setup_method(self) -> None:
         self._pset = Mock(Photoset, title="Some Set", id=999)
-        self._photo = Mock(Photo, title="Some Photo", id=123, index=1)
+        self._photo = Mock(Photo, title="Some Photo", id=123)
         self._suffix = ""
 
     def teardown_method(self) -> None:
