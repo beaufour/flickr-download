@@ -28,6 +28,3 @@ jobs:
       - name: Run tests
         run: |
           poetry run coverage run -m pytest
-      - name: Run checks
-        run: |
-          poetry run pre-commit run --all-files
