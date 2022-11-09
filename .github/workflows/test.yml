@@ -29,6 +29,12 @@ jobs:
         run: |
           poetry run coverage run -m pytest
           poetry run coverage lcov -o coverage/lcov.info
+          poetry run coverage html -d coverage
+      - name: Archive code coverage results
+        uses: actions/upload-artifact@v3
+        with:
+          name: code-coverage-report
+          path: coverage
       - name: Coveralls
         uses: coverallsapp/github-action@master
         with:

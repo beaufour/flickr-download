@@ -7,4 +7,4 @@
 /dist/
 /.venv/
 .coverage
-coverage/lcov.info
+coverage/*
