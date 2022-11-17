@@ -46,13 +46,14 @@ except ModuleNotFoundError:
     __version__ = importlib_metadata.version("flickr_download")
 
 
-def _init(key: str, secret: str, oauth: Optional[str]) -> bool:
+def _init(key: str, secret: str, oauth: bool) -> bool:
     """Initialize API.
 
     @see: http://www.flickr.com/services/api/
 
     @param key: API key
     @param secret: API secret
+    @param oauth: do user authentication (via OAuth)
     """
     Flickr.set_keys(key, secret)
     if not oauth:
