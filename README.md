@@ -15,6 +15,8 @@ It can also list the public set ids for a given user:
 
     flickr_download -k <api key> -s <api secret> -l <user name>
 
+The user name can be passed in as a URL, email, or user name.
+
 Get a public set using the title and id to name the downloaded files:
 
     flickr_download -k <api key> -s <api secret> -d <set id> -n title_and_id
