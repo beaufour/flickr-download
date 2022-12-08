@@ -2,6 +2,9 @@ name: test
 
 on: [push]
 
+env:
+  PYTHON_KEYRING_BACKEND: keyring.backends.null.Keyring
+
 jobs:
   build:
 
