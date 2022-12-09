@@ -9,7 +9,7 @@ if [[ $(git tag -l | grep ${VERSION}) ]]; then
 fi
 
 if [[ -n $(git status -s) ]]; then
-  echo ERROR: Repo has modified or untrackef files, bailing...
+  echo ERROR: Repo is modified or has untracked files, bailing...
   exit 1
 fi
 
