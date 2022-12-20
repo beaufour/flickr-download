@@ -35,6 +35,6 @@ repos:
       - id: mypy
         additional_dependencies: [types-all]
   - repo: https://github.com/PyCQA/docformatter
-    rev: v1.5.0
+    rev: v1.5.1
     hooks:
       - id: docformatter
