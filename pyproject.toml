@@ -18,6 +18,7 @@ python-dateutil = "2.8.1"
 PyYAML = "^5.3"
 pathvalidate = "^2.5.2"
 importlib-metadata = { version = "~4.2.0", python = "<3.8" }
+interrogate = "^1.5.0"
 
 [tool.poetry.group.extras.dependencies]
 coverage = "^6.5.0"
@@ -56,3 +57,6 @@ exclude = '''
                      # the root of the project
 )
 '''
+
+[tool.interrogate]
+exclude = ["tests"]

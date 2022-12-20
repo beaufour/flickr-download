@@ -38,3 +38,9 @@ repos:
     rev: v1.5.1
     hooks:
       - id: docformatter
+  - repo: https://github.com/econchick/interrogate
+    rev: 1.5.0
+    hooks:
+      - id: interrogate
+        args: ["--config=pyproject.toml"]
+        pass_filenames: false
