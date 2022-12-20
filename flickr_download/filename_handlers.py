@@ -7,8 +7,8 @@ from flickr_api.objects import Photo, Photoset
 
 from flickr_download.utils import get_filename
 
+# The default handler if none is specified
 DEFAULT_HANDLER = "title_increment"
-"""The default handler if none is specified"""
 
 FilenameHandler = Callable[[Optional[Photoset], Photo, Optional[str]], str]
 
@@ -75,8 +75,8 @@ def id_and_title(pset: Optional[Photoset], photo: Photo, suffix: Optional[str]) 
     return get_filename(f"{photo.id}-{photo.title}{suffix}")
 
 
+# Photoset -> filename index for title_increment function duplicate tracking
 INCREMENT_INDEX: Dict[Any, Any] = defaultdict(lambda: defaultdict(int))
-"""Photoset -> filename index for title_increment function duplicate tracking"""
 
 
 def title_increment(pset: Optional[Photoset], photo: Photo, suffix: Optional[str]) -> str:
