@@ -436,14 +436,15 @@ def _get_arg_parser() -> argparse.ArgumentParser:
         type=str,
         metavar="SIZE_LABEL",
         default=None,
-        help="Quality of the picture",
+        help="Quality of the picture. Examples: Original/Large/Medium/Small."
+        " By default the largest available is used.",
     )
     parser.add_argument(
         "-n",
         "--naming",
         choices=get_filename_handler_names(),
         metavar="NAMING_MODE",
-        help="Photo naming mode",
+        help="Photo naming mode. Use --list_naming to get a list of possible NAMING_MODEs",
     )
     parser.add_argument("-m", "--list_naming", action="store_true", help="List naming modes")
     parser.add_argument(
