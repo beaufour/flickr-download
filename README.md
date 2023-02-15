@@ -88,9 +88,9 @@ So to download all the sets for a given user `XXX`, including private photos and
     -i PHOTO_ID, --download_photo PHOTO_ID
                             Download one specific photo
     -q SIZE_LABEL, --quality SIZE_LABEL
-                            Quality of the picture
+                            Quality of the picture. Examples: Original/Large/Medium/Small. By default the largest available is used.
     -n NAMING_MODE, --naming NAMING_MODE
-                            Photo naming mode
+                            Photo naming mode. Use --list_naming to get a list of possible NAMING_MODEs
     -m, --list_naming     List naming modes
     -o, --skip_download   Skip the actual download of the photo
     -j, --save_json       Save photo info like description and tags, one .json file per photo
