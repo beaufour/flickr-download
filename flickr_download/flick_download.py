@@ -376,7 +376,6 @@ def print_sets(username: str) -> None:
 
 def _get_arg_parser() -> argparse.ArgumentParser:
     """Gets a parser for the command line arguments."""
-
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter,
         description="Downloads one or more Flickr photo sets.\n"

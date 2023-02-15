@@ -64,7 +64,6 @@ def init_cache(path: str) -> SimpleCache:
 
 def serialize_json(obj: Any) -> Any:
     """JSON serializer for objects not serializable by default json code."""
-
     if isinstance(obj, Person):
         return obj.username
 
