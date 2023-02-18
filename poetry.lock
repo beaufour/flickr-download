@@ -332,14 +332,14 @@ pyflakes = ">=2.4.0,<2.5.0"
 
 [[package]]
 name = "flickr-api"
-version = "0.7.6"
+version = "0.7.7"
 description = "Python wrapper for the Flickr API"
 category = "main"
 optional = false
 python-versions = "*"
 files = [
-    {file = "flickr_api-0.7.6-py3-none-any.whl", hash = "sha256:f98bdaf0229e31e4bc0153214587a5ba0ccdb02d02be02d6a990272ba80e342f"},
-    {file = "flickr_api-0.7.6.tar.gz", hash = "sha256:2dfa94a033c41e5ab2645a2be4a11b1bbcae4255a07f6dc3943b1f0792e17884"},
+    {file = "flickr_api-0.7.7-py3-none-any.whl", hash = "sha256:53d973a3e061b224a4446abf1bd5bc64e9329d1113123f03bc1b2f766fc9ac72"},
+    {file = "flickr_api-0.7.7.tar.gz", hash = "sha256:e8c82000fd237da4bc31f0d865cd915b30a7ef2f45fc7eff4d291d86afb47074"},
 ]
 
 [package.dependencies]
@@ -770,14 +770,14 @@ use-chardet-on-py3 = ["chardet (>=3.0.2,<6)"]
 
 [[package]]
 name = "setuptools"
-version = "67.3.1"
+version = "67.3.2"
 description = "Easily download, build, install, upgrade, and uninstall Python packages"
 category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "setuptools-67.3.1-py3-none-any.whl", hash = "sha256:23c86b4e44432bfd8899384afc08872ec166a24f48a3f99f293b0a557e6a6b5d"},
-    {file = "setuptools-67.3.1.tar.gz", hash = "sha256:daec07fd848d80676694d6bf69c009d28910aeece68a38dbe88b7e1bb6dba12e"},
+    {file = "setuptools-67.3.2-py3-none-any.whl", hash = "sha256:bb6d8e508de562768f2027902929f8523932fcd1fb784e6d573d2cafac995a48"},
+    {file = "setuptools-67.3.2.tar.gz", hash = "sha256:95f00380ef2ffa41d9bba85d95b27689d923c93dfbafed4aecd7cf988a25e012"},
 ]
 
 [package.extras]
@@ -923,14 +923,14 @@ testing = ["coverage (>=4)", "coverage-enable-subprocess (>=1)", "flaky (>=3)", 
 
 [[package]]
 name = "zipp"
-version = "3.13.0"
+version = "3.14.0"
 description = "Backport of pathlib-compatible object wrapper for zip files"
 category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "zipp-3.13.0-py3-none-any.whl", hash = "sha256:e8b2a36ea17df80ffe9e2c4fda3f693c3dad6df1697d3cd3af232db680950b0b"},
-    {file = "zipp-3.13.0.tar.gz", hash = "sha256:23f70e964bc11a34cef175bc90ba2914e1e4545ea1e3e2f67c079671883f9cb6"},
+    {file = "zipp-3.14.0-py3-none-any.whl", hash = "sha256:188834565033387710d046e3fe96acfc9b5e86cbca7f39ff69cf21a4128198b7"},
+    {file = "zipp-3.14.0.tar.gz", hash = "sha256:9e5421e176ef5ab4c0ad896624e87a7b2f07aca746c9b2aa305952800cb8eecb"},
 ]
 
 [package.extras]
@@ -940,4 +940,4 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.7"
-content-hash = "2abbc42e39e1d289b0aadcbeab0aed062675200eb2e1cb0ac13c4ba2519b8e3c"
+content-hash = "bd5e832530d56d55e13b0c322bf0994028d70c553334f8a550ca9a8eefdf69d4"
