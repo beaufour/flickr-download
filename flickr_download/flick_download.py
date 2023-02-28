@@ -13,7 +13,7 @@ from typing import Any, Dict, Optional
 
 import flickr_api as Flickr
 import yaml
-from flickr_api.flickrerrors import FlickrError
+from flickr_api.flickrerrors import FlickrAPIError, FlickrError
 from flickr_api.objects import Person, Photo, Photoset, Walker
 
 from flickr_download.filename_handlers import (
@@ -242,12 +242,18 @@ def do_download_photo(
                 with open(json_fname, "w", encoding="utf-8") as json_file:
                     logging.info("Saving photo info: %s", json_fname)
                     photo_data = photo.__dict__.copy()
-                    photo_data["exif"] = photo.getExif()
+                    try:
+                        photo_data["exif"] = photo.getExif()
+                    except FlickrAPIError as ex:
+                        if ex.code == 2:
+                            logging.warning("Could not get EXIF data. Likely not photo owner?")
+                        else:
+                            raise
                     json_file.write(
                         json.dumps(photo_data, default=serialize_json, indent=2, sort_keys=True)
                     )
         except Exception:
-            logging.warning("Trouble saving photo info: %s", sys.exc_info()[0])
+            logging.warning("Trouble saving photo info: %s", sys.exc_info())
 
     if not size_label and photo._getLargestSizeLabel() == "Video Player":
         # For old videos there doesn't seem to be an actual video url
