@@ -41,7 +41,7 @@ try:
 
     __version__ = importlib.metadata.version("flickr_download")
 except ModuleNotFoundError:
-    import importlib_metadata  # pyright: reportMissingImports=false
+    import importlib_metadata  # pyright: ignore reportMissingImports
 
     __version__ = importlib_metadata.version("flickr_download")
 
