@@ -332,6 +332,7 @@ def download_user(
     size_label: Optional[str],
     skip_download: bool = False,
     save_json: bool = False,
+    metadata_store: Optional[bool] = None,
 ) -> None:
     """Download all the sets owned by the given user.
 
@@ -344,7 +345,9 @@ def download_user(
     user = find_user(username)
     photosets = Walker(user.getPhotosets)  # pylint: disable=E1101
     for photoset in photosets:
-        download_set(photoset.id, get_filename, size_label, skip_download, save_json)
+        download_set(
+            photoset.id, get_filename, size_label, skip_download, save_json, metadata_store
+        )
 
 
 def download_user_photos(
@@ -546,6 +549,7 @@ def main() -> int:
                     args.quality,
                     args.skip_download,
                     args.save_json,
+                    args.metadata_store,
                 )
             elif args.download_photo:
                 download_photo(
