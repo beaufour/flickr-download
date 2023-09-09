@@ -267,23 +267,22 @@ def do_download_photo(
         # TODO: Ideally we should check for file size / md5 here
         # to handle failed downloads.
         logging.info("Skipping %s, as it exists already", fname)
-        return
+    else:
+        logging.info("Saving: %s (%s)", fname, get_photo_page(photo))
+        if skip_download:
+            return
 
-    logging.info("Saving: %s (%s)", fname, get_photo_page(photo))
-    if skip_download:
-        return
+        try:
+            photo.save(fname, size_label)
+        except IOError as ex:
+            logging.error("IO error saving photo: %s", ex)
+            return
+        except FlickrError as ex:
+            logging.error("Flickr error saving photo: %s", ex)
+            return
 
-    try:
-        photo.save(fname, size_label)
-    except IOError as ex:
-        logging.error("IO error saving photo: %s", ex)
-        return
-    except FlickrError as ex:
-        logging.error("Flickr error saving photo: %s", ex)
-        return
-
-    # Set file times to when the photo was taken
-    set_file_time(fname, photo["taken"])
+        # Set file times to when the photo was taken
+        set_file_time(fname, photo["taken"])
 
     if metadata_db:
         metadata_db.execute(
