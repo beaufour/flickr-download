@@ -49,11 +49,11 @@ except ModuleNotFoundError:
 def _init(key: str, secret: str, oauth: bool) -> bool:
     """Initialize API.
 
-    @see: http://www.flickr.com/services/api/
+    :see: http://www.flickr.com/services/api/
 
-    @param key: API key
-    @param secret: API secret
-    @param oauth: do user authentication (via OAuth)
+    :param key: API key
+    :param secret: API secret
+    :param oauth: do user authentication (via OAuth)
     """
     Flickr.set_keys(key, secret)
     if not oauth:
@@ -82,7 +82,7 @@ def _init(key: str, secret: str, oauth: bool) -> bool:
 def _load_defaults() -> Dict[str, Any]:
     """Load default parameters from config file.
 
-    @return: default parameters
+    :returns: default parameters
     """
     filename = os.path.expanduser(CONFIG_FILE)
     logging.debug("Loading configuration from %s", filename)
@@ -119,11 +119,11 @@ def download_set(
 ) -> None:
     """Download the set with 'set_id' to the current directory.
 
-    @param set_id: id of the photo set
-    @param get_filename: function that creates a filename for the photo
-    @param size_label: size to download (or None for largest available)
-    @param skip_download: do not actually download the photo
-    @param save_json: save photo info as .json file
+    :param set_id: id of the photo set
+    :param get_filename: function that creates a filename for the photo
+    :param size_label: size to download (or None for largest available)
+    :param skip_download: do not actually download the photo
+    :param save_json: save photo info as .json file
     """
     pset = Flickr.Photoset(id=set_id)
     download_list(
@@ -142,12 +142,12 @@ def download_list(
 ) -> None:
     """Download all the photos in the given photo list.
 
-    @param pset: photo list to download
-    @param photos_title: name of the photo list
-    @param get_filename: function that creates a filename for the photo
-    @param size_label: size to download (or None for largest available)
-    @param skip_download: do not actually download the photo
-    @param save_json: save photo info as .json file
+    :param pset: photo list to download
+    :param photos_title: name of the photo list
+    :param get_filename: function that creates a filename for the photo
+    :param size_label: size to download (or None for largest available)
+    :param skip_download: do not actually download the photo
+    :param save_json: save photo info as .json file
     """
 
     photos = Walker(pset.getPhotos)
@@ -204,15 +204,16 @@ def do_download_photo(
 ) -> None:
     """Handle the downloading of a single photo.
 
-    @param dirname: directory to download to
-    @param pset: photo list to download
-    @param photo: photo to download
-    @param size_label: size to download (or None for largest available)
-    @param suffix: optional suffix to add to file name
-    @param get_filename: function that creates a filename for the photo
-    @param skip_download: do not actually download the photo
-    @param save_json: save photo info as .json file
-    @param metadata_db: optional metadata database to record downloads in
+    :param dirname: directory to download to
+    :param pset: photo list to download
+    :param photo: photo to download
+    :param size_label: size to download (or None for largest available)
+    :param suffix: optional suffix to add to file name
+    :param get_filename: function that creates a filename for the photo
+    :param skip_download: do not actually download the photo
+    :param save_json: save photo info as .json file
+    :param metadata_db: optional metadata database to record downloads
+        in
     """
     if metadata_db:
         if metadata_db.execute(
@@ -300,11 +301,11 @@ def download_photo(
 ) -> None:
     """Download one photo.
 
-    @param photo_id: id of the photo
-    @param get_filename: function that creates a filename for the photo
-    @param size_label: size to download (or None for largest available)
-    @param skip_download: do not actually download the photo
-    @param save_json: save photo info as .json file
+    :param photo_id: id of the photo
+    :param get_filename: function that creates a filename for the photo
+    :param size_label: size to download (or None for largest available)
+    :param skip_download: do not actually download the photo
+    :param save_json: save photo info as .json file
     """
     photo = Flickr.Photo(id=photo_id)
     suffix = f" ({size_label})" if size_label else ""
@@ -336,11 +337,11 @@ def download_user(
 ) -> None:
     """Download all the sets owned by the given user.
 
-    @param username: username
-    @param get_filename: function that creates a filename for the photo
-    @param size_label: size to download (or None for largest available)
-    @param skip_download: do not actually download the photo
-    @param save_json: save photo info as .json file
+    :param username: username
+    :param get_filename: function that creates a filename for the photo
+    :param size_label: size to download (or None for largest available)
+    :param skip_download: do not actually download the photo
+    :param save_json: save photo info as .json file
     """
     user = find_user(username)
     photosets = Walker(user.getPhotosets)  # pylint: disable=E1101
@@ -360,11 +361,11 @@ def download_user_photos(
 ) -> None:
     """Download all the photos owned by the given user.
 
-    @param username: username
-    @param get_filename: function that creates a filename for the photo
-    @param size_label: size to download (or None for largest available)
-    @param skip_download: do not actually download the photo
-    @param save_json: save photo info as .json file
+    :param username: username
+    :param get_filename: function that creates a filename for the photo
+    :param size_label: size to download (or None for largest available)
+    :param skip_download: do not actually download the photo
+    :param save_json: save photo info as .json file
     """
     user = find_user(username)
     download_list(
@@ -375,7 +376,7 @@ def download_user_photos(
 def print_sets(username: str) -> None:
     """Print all sets for the given user.
 
-    @param username: the name of the user
+    :param username: the name of the user
     """
     user = find_user(username)
     photosets = Walker(user.getPhotosets)  # pylint: disable=E1101

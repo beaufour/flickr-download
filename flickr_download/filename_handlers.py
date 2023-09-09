@@ -16,8 +16,8 @@ FilenameHandler = Callable[[Optional[Photoset], Photo, Optional[str]], str]
 def _get_short_docstring(docstring: Optional[str]) -> Optional[str]:
     """Given a docstring return the first sentence of it.
 
-    @param: docstring: str, the docstring to parse
-    @return: str, the short docstring
+    :param: docstring: the docstring to parse
+    :returns: the short docstring
     """
     return docstring.split(".")[0].strip() if docstring else None
 
@@ -25,10 +25,10 @@ def _get_short_docstring(docstring: Optional[str]) -> Optional[str]:
 def title(pset: Optional[Photoset], photo: Photo, suffix: Optional[str]) -> str:
     """Name file after title (falls back to photo id).
 
-    @param pset: the photoset
-    @param photo: the photo
-    @param suffix: optional suffix
-    @return: the filename
+    :param pset: the photoset
+    :param photo: the photo
+    :param suffix: optional suffix
+    :returns: the filename
     """
     if not photo.title:
         return idd(pset, photo, suffix)
@@ -39,10 +39,10 @@ def title(pset: Optional[Photoset], photo: Photo, suffix: Optional[str]) -> str:
 def idd(_: Optional[Photoset], photo: Photo, suffix: Optional[str]) -> str:
     """Name file after photo id.
 
-    @param pset: the photoset
-    @param photo: the photo
-    @param suffix: optional suffix
-    @return: the filename
+    :param pset: the photoset
+    :param photo: the photo
+    :param suffix: optional suffix
+    :returns: the filename
     """
     return f"{photo.id}{suffix}"
 
@@ -50,10 +50,10 @@ def idd(_: Optional[Photoset], photo: Photo, suffix: Optional[str]) -> str:
 def title_and_id(pset: Optional[Photoset], photo: Photo, suffix: Optional[str]) -> str:
     """Name file after title and photo id.
 
-    @param pset: Flickr.Photoset, the photoset
-    @param photo: Flickr.Photo, the photo
-    @param suffix: str, optional suffix
-    @return: str, the filename
+    :param pset: the photoset
+    :param photo: the photo
+    :param suffix: optional suffix
+    :returns: the filename
     """
     if not photo.title:
         return idd(pset, photo, suffix)
@@ -64,10 +64,10 @@ def title_and_id(pset: Optional[Photoset], photo: Photo, suffix: Optional[str]) 
 def id_and_title(pset: Optional[Photoset], photo: Photo, suffix: Optional[str]) -> str:
     """Name file after photo id and title.
 
-    @param pset: Flickr.Photoset, the photoset
-    @param photo: Flickr.Photo, the photo
-    @param suffix: str, optional suffix
-    @return: str, the filename
+    :param pset: the photoset
+    :param photo: the photo
+    :param suffix: optional suffix
+    :returns: the filename
     """
     if not photo.title:
         return idd(pset, photo, suffix)
@@ -83,10 +83,10 @@ def title_increment(pset: Optional[Photoset], photo: Photo, suffix: Optional[str
     """Name file after photo title, but add an incrementing counter on
     duplicates.
 
-    @param pset: Flickr.Photoset, the photoset
-    @param photo: Flickr.Photo, the photo
-    @param suffix: str, optional suffix
-    @return: str, the filename
+    :param pset: the photoset
+    :param photo: the photo
+    :param suffix: optional suffix
+    :returns: the filename
     """
     if not photo.title:
         return idd(pset, photo, suffix)
@@ -112,8 +112,8 @@ HANDLERS = {
 def get_filename_handler(name: str) -> FilenameHandler:
     """Returns the given filename handler as a function.
 
-    @param name: str, name of the handler to return
-    @return: Function, handler
+    :param name: name of the handler to return
+    :returns: handler
     """
     return HANDLERS[name or DEFAULT_HANDLER]
 
@@ -121,7 +121,7 @@ def get_filename_handler(name: str) -> FilenameHandler:
 def get_filename_handler_help() -> str:
     """Returns a description of each handler to be used for help output.
 
-    @return: str, help text
+    :returns: help text
     """
     ret = []
     HANDLERS.items()
