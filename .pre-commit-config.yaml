@@ -27,7 +27,7 @@ repos:
       - id: flake8
         additional_dependencies: ["importlib-metadata<5.0.0"]
   - repo: https://github.com/psf/black
-    rev: 23.7.0
+    rev: 23.9.0
     hooks:
       - id: black
   - repo: https://github.com/pre-commit/mirrors-mypy
@@ -36,7 +36,7 @@ repos:
       - id: mypy
         additional_dependencies: [types-all]
   - repo: https://github.com/PyCQA/docformatter
-    rev: v1.5.1
+    rev: v1.7.5
     hooks:
       - id: docformatter
   - repo: https://github.com/econchick/interrogate
