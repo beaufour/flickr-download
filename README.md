@@ -68,7 +68,7 @@ If you are downloading a lot of photos, two parameters will speed things up. Esp
 
 So to download all the sets for a given user `XXX`, including private photos and sets, do:
 
-    > flickr_download.py -api_key KEY -api_secret SECRET --user_auth --cache api_cache --metadata_store --download_user XXX
+    > flickr_download -k KEY -s SECRET --user_auth --cache api_cache --metadata_store --download_user XXX
 
 ## Optional arguments
 
