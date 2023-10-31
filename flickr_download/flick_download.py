@@ -4,17 +4,17 @@
 import argparse
 import base64
 import errno
+import hashlib
 import json
 import logging
-import hashlib
 import os
-import requests
 import sqlite3
 import sys
 from pathlib import Path
 from typing import Any, Dict, Optional
 
 import flickr_api as Flickr
+import requests
 import yaml
 from flickr_api.flickrerrors import FlickrAPIError, FlickrError
 from flickr_api.objects import Person, Photo, Photoset, Walker
@@ -107,7 +107,8 @@ def _load_defaults() -> Dict[str, Any]:
 def _get_metadata_db(dirname: str) -> sqlite3.Connection:
     conn = sqlite3.connect(Path(dirname) / ".metadata.db")
     conn.execute(
-        "CREATE TABLE IF NOT EXISTS downloads (photo_id text, size_label text, suffix text, photo_length text, photo_md5 text)"
+        "CREATE TABLE IF NOT EXISTS downloads"
+        "(photo_id text, size_label text, suffix text, photo_length text, photo_md5 text)"
     )
     return conn
 
@@ -164,8 +165,7 @@ def download_list(
             os.mkdir(dirname)
         except OSError as err:
             if err.errno == errno.ENAMETOOLONG:
-                logging.warning(
-                    "WARNING: Truncating too long directory name: %s", dirname)
+                logging.warning("WARNING: Truncating too long directory name: %s", dirname)
                 # Not the most fantastic handling here, but it is surprisingly hard to get the max
                 # length in an OS-agnostic way... Assuming that most OSes can handle at least 200
                 # chars...
@@ -196,30 +196,30 @@ def download_list(
 
 
 def is_local_file_matched(fname: str, photo_length: int, photo_md5: str) -> bool:
-    """Validate the local file is matched to the remote phto file.
+    """Validate the local file is matched to the remote photo file.
 
     :param fname: local file name with path
     :param photo_length: remote photo file length from HTTP 200 response
-    :param photo_md5: remote photo file md5 checksum in base64 format from HTTP 200 response
+    :param photo_md5: remote photo file md5 checksum in base64 format
+        from HTTP 200 response
     """
     if os.path.exists(fname):
         # Get the size and md5 of local file and change md5 to base6 format
         try:
             local_length = os.path.getsize(fname)
-        except OSError as ex:
+        except OSError:
             logging.warning("Could not access file %s", fname)
             return False
 
         local_md5 = hashlib.md5()
         try:
-            with open(fname, 'rb') as local_file:
+            with open(fname, "rb") as local_file:
                 local_md5.update(local_file.read())
-        except OSError as ex:
+        except OSError:
             logging.warning("File %s cannot be opened", fname)
             return False
 
-        local_md5_base64 = base64.b64encode(
-            bytes.fromhex(local_md5.hexdigest())).decode('utf-8')
+        local_md5_base64 = base64.b64encode(bytes.fromhex(local_md5.hexdigest())).decode("utf-8")
 
         # Compare remote and local file sizes and md5 values in base64 format
         if photo_length == local_length and photo_md5 == local_md5_base64:
@@ -259,8 +259,7 @@ def do_download_photo(
             "SELECT * FROM downloads WHERE photo_id = ? AND size_label = ? AND suffix = ?",
             (photo.id, size_label or "", suffix),
         ).fetchone():
-            logging.info(
-                "Skipping download of already downloaded photo with ID: %s", photo.id)
+            logging.info("Skipping download of already downloaded photo with ID: %s", photo.id)
             return
 
     fname = get_full_path(dirname, get_filename(pset, photo, suffix))
@@ -272,8 +271,7 @@ def do_download_photo(
         try:
             photo.load()
         except FlickrError:
-            logging.info(
-                "Skipping %s, because cannot get info from Flickr", fname)
+            logging.info("Skipping %s, because cannot get info from Flickr", fname)
             return
 
     if save_json:
@@ -288,13 +286,11 @@ def do_download_photo(
                         photo_data["exif"] = photo.getExif()
                     except FlickrAPIError as ex:
                         if ex.code == 2:
-                            logging.warning(
-                                "Could not get EXIF data. Likely not photo owner?")
+                            logging.warning("Could not get EXIF data. Likely not photo owner?")
                         else:
                             raise
                     json_file.write(
-                        json.dumps(photo_data, default=serialize_json,
-                                   indent=2, sort_keys=True)
+                        json.dumps(photo_data, default=serialize_json, indent=2, sort_keys=True)
                     )
         except Exception:
             logging.warning("Trouble saving photo info: %s", sys.exc_info())
@@ -315,8 +311,8 @@ def do_download_photo(
     photo_file = photo.getPhotoFile(largest_size_label)
     rsp = requests.get(photo_file)
     if rsp.status_code == 200:
-        photo_length = int(rsp.headers['Content-Length'])
-        photo_md5 = rsp.headers['Content-MD5']
+        photo_length = int(rsp.headers["Content-Length"])
+        photo_md5 = rsp.headers["Content-MD5"]
         rsp.close()
     else:
         logging.warning("Remote file %s is not retrievable", photo_file)
@@ -347,12 +343,12 @@ def do_download_photo(
     if is_local_file_matched(fname, photo_length, photo_md5):
         if metadata_db:
             metadata_db.execute(
-                "INSERT INTO downloads VALUES (?, ?, ?, ?, ?)", (
-                    photo.id, size_label or "", suffix, photo_length, photo_md5)
+                "INSERT INTO downloads VALUES (?, ?, ?, ?, ?)",
+                (photo.id, size_label or "", suffix, photo_length, photo_md5),
             )
             metadata_db.commit()
     else:
-        logging.info("%s is NOT downloaded completedly", fname)
+        logging.info("%s is NOT downloaded completely", fname)
 
 
 def download_photo(
@@ -372,8 +368,7 @@ def download_photo(
     """
     photo = Flickr.Photo(id=photo_id)
     suffix = f" ({size_label})" if size_label else ""
-    do_download_photo(".", None, photo, size_label, suffix,
-                      get_filename, skip_download, save_json)
+    do_download_photo(".", None, photo, size_label, suffix, get_filename, skip_download, save_json)
 
 
 def find_user(userid: str) -> Person:
@@ -460,8 +455,7 @@ def _get_arg_parser() -> argparse.ArgumentParser:
         "For more information see:\n"
         "https://github.com/beaufour/flickr-download\n"
         "\n"
-        "You can store argument defaults in " +
-        CONFIG_FILE + ". API keys for example:\n"
+        "You can store argument defaults in " + CONFIG_FILE + ". API keys for example:\n"
         "  api_key: .....\n"
         "  api_secret: ...\n",
         epilog="examples:\n"
@@ -477,12 +471,9 @@ def _get_arg_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument("-k", "--api_key", type=str, help="Flickr API key")
-    parser.add_argument("-s", "--api_secret", type=str,
-                        help="Flickr API secret")
-    parser.add_argument("-t", "--user_auth", action="store_true",
-                        help="Enable user authentication")
-    parser.add_argument("-l", "--list", type=str,
-                        metavar="USER", help="List photosets for a user")
+    parser.add_argument("-s", "--api_secret", type=str, help="Flickr API secret")
+    parser.add_argument("-t", "--user_auth", action="store_true", help="Enable user authentication")
+    parser.add_argument("-l", "--list", type=str, metavar="USER", help="List photosets for a user")
     parser.add_argument(
         "-d", "--download", type=str, metavar="SET_ID", help="Download the given set"
     )
@@ -523,8 +514,7 @@ def _get_arg_parser() -> argparse.ArgumentParser:
         metavar="NAMING_MODE",
         help="Photo naming mode. Use --list_naming to get a list of possible NAMING_MODEs",
     )
-    parser.add_argument("-m", "--list_naming",
-                        action="store_true", help="List naming modes")
+    parser.add_argument("-m", "--list_naming", action="store_true", help="List naming modes")
     parser.add_argument(
         "-o",
         "--skip_download",
@@ -549,8 +539,7 @@ def _get_arg_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Store information about downloads in a metadata file (helps with retrying downloads)",
     )
-    parser.add_argument("-v", "--verbose", action="store_true",
-                        help="Turns on verbose logging")
+    parser.add_argument("-v", "--verbose", action="store_true", help="Turns on verbose logging")
     parser.add_argument(
         "--version", action="version", version=__version__, help="Lists the version of the tool"
     )
@@ -599,8 +588,7 @@ def main() -> int:
         logging.info("Will skip actual downloading of files")
 
     if args.save_json:
-        logging.info(
-            "Will save photo info in .json file with same basename as photo")
+        logging.info("Will save photo info in .json file with same basename as photo")
 
     if args.download or args.download_user or args.download_user_photos or args.download_photo:
         try:
