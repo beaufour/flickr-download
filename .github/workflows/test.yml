@@ -12,12 +12,12 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
-        poetry-version: ["1.2.2"]
+        poetry-version: ["1.8.1"]
 
     steps:
       - uses: actions/checkout@v3
       - name: Python Poetry Action
-        uses: abatilo/actions-poetry@v2.1.6
+        uses: abatilo/actions-poetry@v3.0.0
         with:
           poetry-version: ${{ matrix.poetry-version }}
       - name: Set up Python ${{ matrix.python-version }}
