@@ -3,7 +3,7 @@
     "configurations": [
         {
             "name": "list photosets (500+)",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/flickr_download/flick_download.py",
             "console": "integratedTerminal",
