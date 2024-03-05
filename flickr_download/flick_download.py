@@ -2,7 +2,9 @@
 """Main functionality of the util."""
 
 import argparse
+import base64
 import errno
+import hashlib
 import json
 import logging
 import os
@@ -12,6 +14,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 import flickr_api as Flickr
+import requests
 import yaml
 from flickr_api.flickrerrors import FlickrAPIError, FlickrError
 from flickr_api.objects import Person, Photo, Photoset, Walker
@@ -104,7 +107,8 @@ def _load_defaults() -> Dict[str, Any]:
 def _get_metadata_db(dirname: str) -> sqlite3.Connection:
     conn = sqlite3.connect(Path(dirname) / ".metadata.db")
     conn.execute(
-        "CREATE TABLE IF NOT EXISTS downloads (photo_id text, size_label text, suffix text)"
+        "CREATE TABLE IF NOT EXISTS downloads"
+        "(photo_id text, size_label text, suffix text, photo_length text, photo_md5 text)"
     )
     return conn
 
@@ -191,6 +195,41 @@ def download_list(
         conn.close()
 
 
+def is_local_file_matched(fname: str, photo_length: int, photo_md5: str) -> bool:
+    """Validate the local file is matched to the remote photo file.
+
+    :param fname: local file name with path
+    :param photo_length: remote photo file length from HTTP 200 response
+    :param photo_md5: remote photo file md5 checksum in base64 format
+        from HTTP 200 response
+    """
+    if os.path.exists(fname):
+        # Get the size and md5 of local file and change md5 to base6 format
+        try:
+            local_length = os.path.getsize(fname)
+        except OSError:
+            logging.warning("Could not access file %s", fname)
+            return False
+
+        local_md5 = hashlib.md5()
+        try:
+            with open(fname, "rb") as local_file:
+                local_md5.update(local_file.read())
+        except OSError:
+            logging.warning("File %s cannot be opened", fname)
+            return False
+
+        local_md5_base64 = base64.b64encode(bytes.fromhex(local_md5.hexdigest())).decode("utf-8")
+
+        # Compare remote and local file sizes and md5 values in base64 format
+        if photo_length == local_length and photo_md5 == local_md5_base64:
+            return True
+        else:
+            return False
+    else:
+        return False
+
+
 def do_download_photo(
     dirname: str,
     pset: Optional[Photoset],
@@ -263,9 +302,25 @@ def do_download_photo(
         logging.error("Video not available for: %s", get_photo_page(photo))
         return
 
-    if os.path.exists(fname):
-        # TODO: Ideally we should check for file size / md5 here
-        # to handle failed downloads.
+    # Get remote file length (size) and md5 checksum
+    largest_size_label = None
+    photo_length = 0
+    photo_md5 = ""
+    if size_label is None:
+        largest_size_label = photo._getLargestSizeLabel()
+    photo_file = photo.getPhotoFile(largest_size_label)
+    rsp = requests.get(photo_file)
+    if rsp.status_code == 200:
+        photo_length = int(rsp.headers["Content-Length"])
+        photo_md5 = rsp.headers["Content-MD5"]
+        rsp.close()
+    else:
+        logging.warning("Remote file %s is not retrievable", photo_file)
+        rsp.close()
+        return
+
+    # Compare the size and md5 checksum between local and remote files
+    if is_local_file_matched(fname, photo_length, photo_md5):
         logging.info("Skipping %s, as it exists already", fname)
     else:
         logging.info("Saving: %s (%s)", fname, get_photo_page(photo))
@@ -284,11 +339,16 @@ def do_download_photo(
         # Set file times to when the photo was taken
         set_file_time(fname, photo["taken"])
 
-    if metadata_db:
-        metadata_db.execute(
-            "INSERT INTO downloads VALUES (?, ?, ?)", (photo.id, size_label or "", suffix)
-        )
-        metadata_db.commit()
+    # Double check the saved local file is up to date before inserting the record
+    if is_local_file_matched(fname, photo_length, photo_md5):
+        if metadata_db:
+            metadata_db.execute(
+                "INSERT INTO downloads VALUES (?, ?, ?, ?, ?)",
+                (photo.id, size_label or "", suffix, photo_length, photo_md5),
+            )
+            metadata_db.commit()
+    else:
+        logging.info("%s is NOT downloaded completely", fname)
 
 
 def download_photo(
