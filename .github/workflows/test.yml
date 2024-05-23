@@ -15,13 +15,13 @@ jobs:
         poetry-version: ["1.8.1"]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Python Poetry Action
-        uses: abatilo/actions-poetry@v3.0.0
+        uses: abatilo/actions-poetry@v3
         with:
           poetry-version: ${{ matrix.poetry-version }}
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'poetry'
@@ -34,9 +34,9 @@ jobs:
           poetry run coverage lcov -o coverage/lcov.info
           poetry run coverage html -d coverage
       - name: Archive code coverage results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: code-coverage-report
+          name: code-coverage-report-${{ matrix.python-version }}
           path: coverage
       - name: Coveralls
         uses: coverallsapp/github-action@master
