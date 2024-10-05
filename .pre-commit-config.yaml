@@ -37,10 +37,11 @@ repos:
         additional_dependencies:
           - types-PyYAML
           - types-python-dateutil
-  - repo: https://github.com/PyCQA/docformatter
-    rev: v1.7.5
-    hooks:
-      - id: docformatter
+# Disabling this too because it also fails on Github. Sigh.
+# - repo: https://github.com/PyCQA/docformatter
+#   rev: v1.7.5
+#   hooks:
+#     - id: docformatter
 # Disable interrogate until the version gets upgraded so it doesn't fail on GH...
 #  - repo: https://github.com/econchick/interrogate
 #    rev: 1.5.0
