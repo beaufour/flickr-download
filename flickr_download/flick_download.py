@@ -16,6 +16,7 @@ import yaml
 from flickr_api.flickrerrors import FlickrAPIError, FlickrError
 from flickr_api.objects import Person, Photo, Photoset, Walker
 
+import flickr_download
 from flickr_download.filename_handlers import (
     FilenameHandler,
     get_filename_handler,
@@ -35,15 +36,6 @@ from flickr_download.utils import (
 
 CONFIG_FILE = "~/.flickr_download"
 OAUTH_TOKEN_FILE = "~/.flickr_token"
-
-try:
-    import importlib.metadata
-
-    __version__ = importlib.metadata.version("flickr_download")
-except ModuleNotFoundError:
-    import importlib_metadata  # pyright: ignore reportMissingImports
-
-    __version__ = importlib_metadata.version("flickr_download")
 
 
 def _init(key: str, secret: str, oauth: bool) -> bool:
@@ -481,7 +473,10 @@ def _get_arg_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("-v", "--verbose", action="store_true", help="Turns on verbose logging")
     parser.add_argument(
-        "--version", action="version", version=__version__, help="Lists the version of the tool"
+        "--version",
+        action="version",
+        version=flickr_download.version,
+        help="Lists the version of the tool",
     )
     parser.set_defaults(**_load_defaults())
 

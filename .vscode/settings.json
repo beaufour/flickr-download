@@ -20,7 +20,8 @@
         "Redacter",
         "somedirname",
         "somename",
-        "userid"
+        "userid",
+        "usingversion"
     ],
     "[python]": {
         "editor.defaultFormatter": "ms-python.black-formatter"
