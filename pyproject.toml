@@ -30,7 +30,7 @@ python-coveralls = "^2.9.3"
 pytest = ">=7.2,<9.0"
 flake8 = ">=4.0.1,<6.0.0"
 black = ">=22.8,<25.0"
-pre-commit = "^2.20.0"
+pre-commit = ">=2.20,<5.0"
 
 [build-system]
 requires = ["poetry-core"]
