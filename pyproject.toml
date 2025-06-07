@@ -1,40 +1,43 @@
-[tool.poetry]
+[project]
 name = "flickr-download"
 version = "0.3.8"
 description = "Download photos from Flickr"
-authors = ["Allan Beaufour <allan@beaufour.dk>"]
+authors = [{name = "Allan Beaufour", email = "allan@beaufour.dk"}]
 readme = "README.md"
-license = "Apache-2.0"
-packages = [{ include = "flickr_download" }]
-repository = "https://github.com/beaufour/flickr-download"
+license = {text = "Apache-2.0"}
+requires-python = ">=3.9,<4.0"
+dependencies = [
+    "flickr-api>=0.7.7",
+    "python-dateutil>=2.8.1",
+    "PyYAML>=5.3,<7.0",
+    "pathvalidate>=2.5.2,<4.0.0",
+    "importlib-metadata~=4.2.0; python_version<'3.8'",
+    "interrogate>=1.5.0",
+    "usingversion>=0.1.2",
+    "setuptools>=75.1,<81.0",
+]
 
-[tool.poetry.scripts]
+[project.optional-dependencies]
+extras = [
+    "coverage>=6.5,<8.0",
+    "python-coveralls>=2.9.3",
+]
+dev = [
+    "pytest>=7.2,<9.0",
+    "flake8>=4.0.1,<8.0.0",
+    "black>=22.8,<26.0",
+    "pre-commit>=2.20,<5.0",
+]
+
+[project.scripts]
 flickr_download = "flickr_download.flick_download:main"
 
-[tool.poetry.dependencies]
-python = ">=3.9,<4.0"
-flickr-api = "^0.7.7"
-python-dateutil = "^2.8.1"
-PyYAML = ">=5.3,<7.0"
-pathvalidate = ">=2.5.2,<4.0.0"
-importlib-metadata = { version = "~4.2.0", python = "<3.8" }
-interrogate = "^1.5.0"
-usingversion = "^0.1.2"
-setuptools = ">=75.1,<81.0"
-
-[tool.poetry.group.extras.dependencies]
-coverage = ">=6.5,<8.0"
-python-coveralls = "^2.9.3"
-
-[tool.poetry.group.dev.dependencies]
-pytest = ">=7.2,<9.0"
-flake8 = ">=4.0.1,<8.0.0"
-black = ">=22.8,<26.0"
-pre-commit = ">=2.20,<5.0"
+[project.urls]
+Repository = "https://github.com/beaufour/flickr-download"
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.black]
 line-length = 100
