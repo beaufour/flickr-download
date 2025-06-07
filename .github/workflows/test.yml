@@ -11,34 +11,30 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
-        poetry-version: ["1.8.1"]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
 
     steps:
       - uses: actions/checkout@v4
-      - name: Python Poetry Action
-        uses: abatilo/actions-poetry@v3
-        with:
-          poetry-version: ${{ matrix.poetry-version }}
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: 'poetry'
       - name: Install dependencies
         run: |
-          poetry install --with dev,extras
+          uv sync --extra dev --extra extras
       - name: Run tests
         run: |
-          poetry run coverage run -m pytest
-          poetry run coverage lcov -o coverage/lcov.info
-          poetry run coverage html -d coverage
+          uv run coverage run -m pytest
+          uv run coverage lcov -o coverage/lcov.info
+          uv run coverage html -d coverage
       - name: Archive code coverage results
         uses: actions/upload-artifact@v4
         with:
           name: code-coverage-report-${{ matrix.python-version }}
           path: coverage
       - name: Coveralls
-        uses: coverallsapp/github-action@master
+        uses: coverallsapp/github-action@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
