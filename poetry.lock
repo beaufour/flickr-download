@@ -405,14 +405,14 @@ pyflakes = ">=3.4.0,<3.5.0"
 
 [[package]]
 name = "flickr-api"
-version = "0.7.7"
+version = "0.7.8"
 description = "Python wrapper for the Flickr API"
 optional = false
 python-versions = "*"
 groups = ["main"]
 files = [
-    {file = "flickr_api-0.7.7-py3-none-any.whl", hash = "sha256:53d973a3e061b224a4446abf1bd5bc64e9329d1113123f03bc1b2f766fc9ac72"},
-    {file = "flickr_api-0.7.7.tar.gz", hash = "sha256:e8c82000fd237da4bc31f0d865cd915b30a7ef2f45fc7eff4d291d86afb47074"},
+    {file = "flickr_api-0.7.8-py3-none-any.whl", hash = "sha256:217925ab75a0a342acd43c5d659e23f6325966ed2ce9479334353f5bb581c10c"},
+    {file = "flickr_api-0.7.8.tar.gz", hash = "sha256:2e4216aba2400ee0f1d78d28429df0a8f312f4da1f3835933b73090e1783c157"},
 ]
 
 [package.dependencies]
