@@ -216,15 +216,19 @@ def do_download_photo(
             return
 
     fname = get_full_path(dirname, get_filename(pset, photo, suffix))
-    fname = photo._getOutputFilename(fname, size_label)
+    try:
+        fname = photo._getOutputFilename(fname, size_label)
+    except (OSError, FlickrError) as ex:
+        logging.error("Error getting photo info for %s: %s", photo.id, ex)
+        return
     json_fname = fname + ".json"
 
     if not photo["loaded"]:
         # trying not trigger two calls to Photo.getInfo here, as it will if it was already loaded
         try:
             photo.load()
-        except FlickrError:
-            logging.info("Skipping %s, because cannot get info from Flickr", fname)
+        except (OSError, FlickrError) as ex:
+            logging.info("Skipping %s, because cannot get info from Flickr: %s", fname, ex)
             return
 
     if save_json:
@@ -248,12 +252,18 @@ def do_download_photo(
         except Exception:
             logging.warning("Trouble saving photo info: %s", sys.exc_info())
 
-    if not size_label and photo._getLargestSizeLabel() == "Video Player":
-        # For old videos there doesn't seem to be an actual video url
-        # available. The largest video size ends up being a SWF video player,
-        # and it's the SWF that'll be downloaded...
-        logging.error("Video not available for: %s", get_photo_page(photo))
-        return
+    if not size_label:
+        try:
+            largest_size = photo._getLargestSizeLabel()
+        except (OSError, FlickrError) as ex:
+            logging.error("Error getting size info for %s: %s", fname, ex)
+            return
+        if largest_size == "Video Player":
+            # For old videos there doesn't seem to be an actual video url
+            # available. The largest video size ends up being a SWF video player,
+            # and it's the SWF that'll be downloaded...
+            logging.error("Video not available for: %s", get_photo_page(photo))
+            return
 
     if os.path.exists(fname):
         # TODO: Ideally we should check for file size / md5 here

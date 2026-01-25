@@ -34,6 +34,7 @@ repos:
         additional_dependencies:
           - types-PyYAML
           - types-python-dateutil
+          - types-requests
 # Disabling this too because it also fails on Github. Sigh.
 # - repo: https://github.com/PyCQA/docformatter
 #   rev: v1.7.5
