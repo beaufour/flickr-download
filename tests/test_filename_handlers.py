@@ -2,7 +2,11 @@ from unittest.mock import Mock
 
 from flickr_api.objects import Photo, Photoset
 
-from flickr_download.filename_handlers import get_filename_handler
+from flickr_download.filename_handlers import (
+    get_filename_handler,
+    get_filename_handler_help,
+    get_filename_handler_names,
+)
 
 
 class TestFilenameHandlers:
@@ -63,3 +67,48 @@ class TestFilenameHandlers:
 
         fn = get_filename_handler("title_and_id")
         assert fn(self._pset, photo, self._suffix) == "file_path-199"
+
+
+def test_id_and_title() -> None:
+    """Test id_and_title handler."""
+    pset = Mock(Photoset, title="Some Set", id=999)
+    photo = Mock(Photo, title="Some Photo", id=123)
+
+    fn = get_filename_handler("id_and_title")
+    assert fn(pset, photo, "") == "123-Some Photo"
+
+
+def test_id_and_title_empty_title() -> None:
+    """Test id_and_title handler with empty title."""
+    pset = Mock(Photoset, title="Some Set", id=999)
+    photo = Mock(Photo, title="", id=123)
+
+    fn = get_filename_handler("id_and_title")
+    assert fn(pset, photo, "") == "123"
+
+
+def test_get_filename_handler_names() -> None:
+    """Test get_filename_handler_names returns all handlers."""
+    names = get_filename_handler_names()
+    assert "title" in names
+    assert "id" in names
+    assert "title_and_id" in names
+    assert "id_and_title" in names
+    assert "title_increment" in names
+
+
+def test_get_filename_handler_help() -> None:
+    """Test get_filename_handler_help returns help text."""
+    help_text = get_filename_handler_help()
+    assert "title" in help_text
+    assert "id" in help_text
+
+
+def test_get_filename_handler_default() -> None:
+    """Test get_filename_handler returns default for None."""
+    fn = get_filename_handler(None)  # type: ignore[arg-type]
+    pset = Mock(Photoset, title="Some Set", id=999)
+    photo = Mock(Photo, title="Test", id=123)
+    # Default should be title_increment which returns "Test" for first occurrence
+    result = fn(pset, photo, "")
+    assert result == "Test"
