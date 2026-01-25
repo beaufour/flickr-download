@@ -6,6 +6,9 @@ from pathlib import Path
 from typing import Optional
 from unittest.mock import Mock, patch
 
+import requests.exceptions
+from flickr_api.flickrerrors import FlickrAPIError, FlickrError
+
 from flickr_download.flick_download import (
     _get_metadata_db,
     _load_defaults,
@@ -398,3 +401,302 @@ class TestDownloadList:
                 assert mock_do_download.call_count == 2
             finally:
                 os.chdir(original_cwd)
+
+
+def _create_mock_photo(
+    photo_id: str = "123",
+    title: str = "Test Photo",
+    loaded: bool = True,
+    taken: str = "2020-01-01 12:00:00",
+) -> Mock:
+    """Helper to create a properly configured mock photo object."""
+    mock_photo = Mock()
+    mock_photo.id = photo_id
+    mock_photo.title = title
+
+    # Configure __getitem__ to return photo data
+    photo_data = {"loaded": loaded, "taken": taken, "urls": None}
+    mock_photo.__getitem__ = Mock(side_effect=lambda k: photo_data.get(k))
+
+    # Configure get() method for get_photo_page() compatibility
+    mock_photo.get = Mock(side_effect=lambda k, default=None: photo_data.get(k, default))
+
+    return mock_photo
+
+
+class TestDoDownloadPhotoErrorHandling:
+    """Tests for error handling in do_download_photo function."""
+
+    def test_ioerror_on_save_is_handled(self) -> None:
+        """do_download_photo handles IOError during save gracefully."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target_file = Path(tmpdir) / "Test Photo.jpg"
+
+            mock_photo = _create_mock_photo()
+            mock_photo._getOutputFilename = Mock(return_value=str(target_file))
+            mock_photo._getLargestSizeLabel = Mock(return_value="Original")
+            mock_photo.save = Mock(side_effect=IOError("Connection refused"))
+
+            mock_pset = Mock()
+            mock_pset.title = "Test Set"
+
+            def mock_get_filename(pset: object, photo: object, suffix: Optional[str]) -> str:
+                return "Test Photo"
+
+            # Should not raise - error is handled internally
+            do_download_photo(
+                tmpdir,
+                mock_pset,
+                mock_photo,
+                None,
+                "",
+                mock_get_filename,
+            )
+
+    def test_flickrerror_on_save_is_handled(self) -> None:
+        """do_download_photo handles FlickrError during save gracefully."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target_file = Path(tmpdir) / "Test Photo.jpg"
+
+            mock_photo = _create_mock_photo()
+            mock_photo._getOutputFilename = Mock(return_value=str(target_file))
+            mock_photo._getLargestSizeLabel = Mock(return_value="Original")
+            mock_photo.save = Mock(side_effect=FlickrError("API Error"))
+
+            mock_pset = Mock()
+            mock_pset.title = "Test Set"
+
+            def mock_get_filename(pset: object, photo: object, suffix: Optional[str]) -> str:
+                return "Test Photo"
+
+            # Should not raise - error is handled internally
+            do_download_photo(
+                tmpdir,
+                mock_pset,
+                mock_photo,
+                None,
+                "",
+                mock_get_filename,
+            )
+
+    def test_connection_error_on_save_is_handled(self) -> None:
+        """do_download_photo handles ConnectionError during save gracefully.
+
+        ConnectionError inherits from OSError, which is aliased as IOError in Python 3.
+        """
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target_file = Path(tmpdir) / "Test Photo.jpg"
+
+            mock_photo = _create_mock_photo()
+            mock_photo._getOutputFilename = Mock(return_value=str(target_file))
+            mock_photo._getLargestSizeLabel = Mock(return_value="Original")
+            mock_photo.save = Mock(
+                side_effect=requests.exceptions.ConnectionError("Failed to resolve hostname")
+            )
+
+            mock_pset = Mock()
+            mock_pset.title = "Test Set"
+
+            def mock_get_filename(pset: object, photo: object, suffix: Optional[str]) -> str:
+                return "Test Photo"
+
+            # Should not raise - ConnectionError inherits from OSError
+            do_download_photo(
+                tmpdir,
+                mock_pset,
+                mock_photo,
+                None,
+                "",
+                mock_get_filename,
+            )
+
+    def test_connection_error_on_get_output_filename_is_handled(self) -> None:
+        """do_download_photo handles ConnectionError during _getOutputFilename.
+
+        This is the fix for issue #166 - network errors during metadata retrieval
+        are now caught and the photo is skipped gracefully.
+        """
+        with tempfile.TemporaryDirectory() as tmpdir:
+            mock_photo = _create_mock_photo()
+            mock_photo._getOutputFilename = Mock(
+                side_effect=requests.exceptions.ConnectionError("Failed to resolve hostname")
+            )
+            mock_photo.save = Mock()
+
+            mock_pset = Mock()
+            mock_pset.title = "Test Set"
+
+            def mock_get_filename(pset: object, photo: object, suffix: Optional[str]) -> str:
+                return "Test Photo"
+
+            # Should not raise - error is handled and photo is skipped
+            do_download_photo(
+                tmpdir,
+                mock_pset,
+                mock_photo,
+                None,
+                "",
+                mock_get_filename,
+            )
+
+            # Save should not be called since we return early after error
+            mock_photo.save.assert_not_called()
+
+    def test_connection_error_on_get_largest_size_label_is_handled(self) -> None:
+        """do_download_photo handles ConnectionError during _getLargestSizeLabel.
+
+        Network errors when checking video size labels are now caught.
+        """
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target_file = Path(tmpdir) / "Test Photo.jpg"
+
+            mock_photo = _create_mock_photo()
+            mock_photo._getOutputFilename = Mock(return_value=str(target_file))
+            mock_photo._getLargestSizeLabel = Mock(
+                side_effect=requests.exceptions.ConnectionError("Failed to resolve hostname")
+            )
+            mock_photo.save = Mock()
+
+            mock_pset = Mock()
+            mock_pset.title = "Test Set"
+
+            def mock_get_filename(pset: object, photo: object, suffix: Optional[str]) -> str:
+                return "Test Photo"
+
+            # Should not raise - error is handled and photo is skipped
+            do_download_photo(
+                tmpdir,
+                mock_pset,
+                mock_photo,
+                None,  # size_label=None triggers _getLargestSizeLabel check
+                "",
+                mock_get_filename,
+            )
+
+            # Save should not be called since we return early after error
+            mock_photo.save.assert_not_called()
+
+    def test_connection_error_on_photo_load_is_handled(self) -> None:
+        """do_download_photo handles ConnectionError during photo.load().
+
+        Network errors like ConnectionError (which inherit from OSError)
+        are now caught along with FlickrError.
+        """
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target_file = Path(tmpdir) / "Test Photo.jpg"
+
+            mock_photo = _create_mock_photo(loaded=False)
+            mock_photo._getOutputFilename = Mock(return_value=str(target_file))
+            mock_photo.load = Mock(
+                side_effect=requests.exceptions.ConnectionError("Failed to resolve hostname")
+            )
+            mock_photo.save = Mock()
+
+            mock_pset = Mock()
+            mock_pset.title = "Test Set"
+
+            def mock_get_filename(pset: object, photo: object, suffix: Optional[str]) -> str:
+                return "Test Photo"
+
+            # Should not raise - OSError/ConnectionError is now caught
+            do_download_photo(
+                tmpdir,
+                mock_pset,
+                mock_photo,
+                None,
+                "",
+                mock_get_filename,
+            )
+
+            # Save should not be called since we return early after error
+            mock_photo.save.assert_not_called()
+
+    def test_flickrerror_on_photo_load_is_handled(self) -> None:
+        """do_download_photo handles FlickrError during photo.load() gracefully."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target_file = Path(tmpdir) / "Test Photo.jpg"
+
+            mock_photo = _create_mock_photo(loaded=False)
+            mock_photo._getOutputFilename = Mock(return_value=str(target_file))
+            mock_photo.load = Mock(side_effect=FlickrError("Photo not found"))
+            mock_photo.save = Mock()
+
+            mock_pset = Mock()
+            mock_pset.title = "Test Set"
+
+            def mock_get_filename(pset: object, photo: object, suffix: Optional[str]) -> str:
+                return "Test Photo"
+
+            # Should not raise - FlickrError is caught and photo is skipped
+            do_download_photo(
+                tmpdir,
+                mock_pset,
+                mock_photo,
+                None,
+                "",
+                mock_get_filename,
+            )
+
+            # Save should not be called since we return early after FlickrError
+            mock_photo.save.assert_not_called()
+
+    @patch("flickr_download.flick_download.set_file_time")
+    def test_flickr_api_error_permission_denied_on_exif(self, mock_set_file_time: Mock) -> None:
+        """do_download_photo handles permission denied error on getExif gracefully."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target_file = Path(tmpdir) / "Test Photo.jpg"
+
+            mock_photo = _create_mock_photo()
+            mock_photo._getOutputFilename = Mock(return_value=str(target_file))
+            mock_photo._getLargestSizeLabel = Mock(return_value="Original")
+            # Error code 2 means "Permission denied" for EXIF
+            mock_photo.getExif = Mock(side_effect=FlickrAPIError(2, "Permission denied"))
+            mock_photo.save = Mock()
+
+            mock_pset = Mock()
+            mock_pset.title = "Test Set"
+
+            def mock_get_filename(pset: object, photo: object, suffix: Optional[str]) -> str:
+                return "Test Photo"
+
+            # Should not raise - permission error code 2 is handled
+            do_download_photo(
+                tmpdir,
+                mock_pset,
+                mock_photo,
+                None,
+                "",
+                mock_get_filename,
+                save_json=True,
+            )
+
+    @patch("flickr_download.flick_download.set_file_time")
+    def test_flickr_api_error_other_code_on_exif_raises(self, mock_set_file_time: Mock) -> None:
+        """do_download_photo re-raises non-permission FlickrAPIError on getExif."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target_file = Path(tmpdir) / "Test Photo.jpg"
+
+            mock_photo = _create_mock_photo()
+            mock_photo._getOutputFilename = Mock(return_value=str(target_file))
+            mock_photo._getLargestSizeLabel = Mock(return_value="Original")
+            # Error code 99 is some other error
+            mock_photo.getExif = Mock(side_effect=FlickrAPIError(99, "Unknown error"))
+            mock_photo.save = Mock()
+
+            mock_pset = Mock()
+            mock_pset.title = "Test Set"
+
+            def mock_get_filename(pset: object, photo: object, suffix: Optional[str]) -> str:
+                return "Test Photo"
+
+            # Non-permission errors are re-raised (but then caught by broad except)
+            # The broad except at line 248 will catch it and log a warning
+            do_download_photo(
+                tmpdir,
+                mock_pset,
+                mock_photo,
+                None,
+                "",
+                mock_get_filename,
+                save_json=True,
+            )

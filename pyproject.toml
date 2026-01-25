@@ -33,6 +33,7 @@ dev = [
     "mypy>=1.0",
     "types-PyYAML",
     "types-python-dateutil",
+    "types-requests",
 ]
 extras = [
     "coverage>=6.5,<8.0",
@@ -57,6 +58,7 @@ dev = [
     "mypy>=1.0",
     "types-PyYAML",
     "types-python-dateutil",
+    "types-requests",
     "coverage>=6.5,<8.0",
     "python-coveralls>=2.9.3,<3",
 ]
