@@ -1,8 +1,10 @@
 """Tests for flickr_download.flick_download module."""
 
+import tempfile
+from pathlib import Path
 from unittest.mock import Mock, patch
 
-from flickr_download.flick_download import find_user
+from flickr_download.flick_download import _load_defaults, find_user
 
 
 class TestFindUser:
@@ -64,3 +66,40 @@ class TestFindUser:
 
         mock_flickr.Person.findByUrl.assert_called_once_with("flickr.com/photos/someuser")
         assert result == mock_person
+
+
+class TestLoadDefaults:
+    """Tests for _load_defaults function."""
+
+    def test_load_defaults_no_file(self) -> None:
+        """_load_defaults returns empty dict when no config file."""
+        with patch("flickr_download.flick_download.CONFIG_FILE", "/nonexistent/config"):
+            result = _load_defaults()
+            assert result == {}
+
+    def test_load_defaults_valid_yaml(self) -> None:
+        """_load_defaults parses valid YAML config."""
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+            f.write("api_key: test_key\napi_secret: test_secret\n")
+            f.flush()
+
+            with patch("flickr_download.flick_download.CONFIG_FILE", f.name):
+                result = _load_defaults()
+
+            assert result["api_key"] == "test_key"
+            assert result["api_secret"] == "test_secret"
+
+            Path(f.name).unlink()
+
+    def test_load_defaults_invalid_yaml(self) -> None:
+        """_load_defaults returns empty dict for invalid YAML."""
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+            f.write("invalid: yaml: content: [[[")
+            f.flush()
+
+            with patch("flickr_download.flick_download.CONFIG_FILE", f.name):
+                result = _load_defaults()
+
+            assert result == {}
+
+            Path(f.name).unlink()
