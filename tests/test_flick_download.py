@@ -4,7 +4,7 @@ import tempfile
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from flickr_download.flick_download import _load_defaults, find_user
+from flickr_download.flick_download import _get_metadata_db, _load_defaults, find_user
 
 
 class TestFindUser:
@@ -103,3 +103,38 @@ class TestLoadDefaults:
             assert result == {}
 
             Path(f.name).unlink()
+
+
+class TestMetadataDb:
+    """Tests for metadata database functions."""
+
+    def test_get_metadata_db_creates_table(self) -> None:
+        """_get_metadata_db creates downloads table."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            conn = _get_metadata_db(tmpdir)
+
+            # Verify table exists
+            cursor = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='downloads'"
+            )
+            assert cursor.fetchone() is not None
+
+            conn.close()
+
+    def test_get_metadata_db_table_schema(self) -> None:
+        """_get_metadata_db creates correct schema."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            conn = _get_metadata_db(tmpdir)
+
+            # Insert and retrieve data to verify schema
+            conn.execute(
+                "INSERT INTO downloads VALUES (?, ?, ?)",
+                ("photo123", "Original", " (Original)"),
+            )
+            conn.commit()
+
+            cursor = conn.execute("SELECT * FROM downloads")
+            row = cursor.fetchone()
+            assert row == ("photo123", "Original", " (Original)")
+
+            conn.close()
