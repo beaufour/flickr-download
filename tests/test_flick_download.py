@@ -203,6 +203,8 @@ class TestDoDownloadPhoto:
             mock_photo.__getitem__ = Mock(return_value=True)  # loaded = True
             mock_photo._getOutputFilename = Mock(return_value=str(existing_file))
             mock_photo.save = Mock()
+            # Return None for URL extras to trigger fallback to _getOutputFilename
+            mock_photo.get = Mock(return_value=None)
 
             mock_pset = Mock()
             mock_pset.title = "Test Set"
