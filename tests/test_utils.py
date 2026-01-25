@@ -2,7 +2,7 @@ import os
 import sys
 import tempfile
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 from flickr_api.objects import Person, Tag
@@ -11,6 +11,7 @@ from flickr_download.utils import (
     get_dirname,
     get_filename,
     get_full_path,
+    get_photo_page,
     save_cache,
     serialize_json,
     set_file_time,
@@ -111,3 +112,39 @@ def test_serialize_json_primitive() -> None:
     """serialize_json passes through primitives."""
     assert serialize_json("string") == "string"
     assert serialize_json(123) == 123
+
+
+def test_get_photo_page_with_url() -> None:
+    """get_photo_page extracts photopage URL."""
+    photo_info: dict[str, dict[str, list[dict[str, str]]]] = {
+        "urls": {"url": [{"type": "photopage", "text": "https://www.flickr.com/photos/user/12345"}]}
+    }
+    # Mock a Photo-like object with dict access
+    mock_photo = MagicMock()
+    mock_photo.get.side_effect = lambda k: photo_info.get(k)
+    mock_photo.__getitem__ = lambda self, k: photo_info[k]
+
+    result = get_photo_page(mock_photo)
+    assert result == "https://www.flickr.com/photos/user/12345"
+
+
+def test_get_photo_page_no_urls() -> None:
+    """get_photo_page returns empty string when no URLs."""
+    mock_photo = MagicMock()
+    mock_photo.get.return_value = None
+
+    result = get_photo_page(mock_photo)
+    assert result == ""
+
+
+def test_get_photo_page_no_photopage_type() -> None:
+    """get_photo_page returns empty string when no photopage type."""
+    photo_info: dict[str, dict[str, list[dict[str, str]]]] = {
+        "urls": {"url": [{"type": "other", "text": "https://example.com"}]}
+    }
+    mock_photo = MagicMock()
+    mock_photo.get.side_effect = lambda k: photo_info.get(k)
+    mock_photo.__getitem__ = lambda self, k: photo_info[k]
+
+    result = get_photo_page(mock_photo)
+    assert result == ""
