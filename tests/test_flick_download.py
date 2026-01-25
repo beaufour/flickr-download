@@ -1,5 +1,6 @@
 """Tests for flickr_download.flick_download module."""
 
+import os
 import tempfile
 from pathlib import Path
 from typing import Optional
@@ -9,6 +10,7 @@ from flickr_download.flick_download import (
     _get_metadata_db,
     _load_defaults,
     do_download_photo,
+    download_list,
     find_user,
 )
 
@@ -334,3 +336,65 @@ class TestDoDownloadPhoto:
 
             # Should not call save with skip_download=True
             mock_photo.save.assert_not_called()
+
+
+class TestDownloadList:
+    """Tests for download_list function."""
+
+    @patch("flickr_download.flick_download.Walker")
+    @patch("flickr_download.flick_download.do_download_photo")
+    def test_download_list_creates_directory(
+        self, mock_do_download: Mock, mock_walker: Mock
+    ) -> None:
+        """download_list creates directory for photoset."""
+        mock_walker.return_value = iter([])  # Empty photo list
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            original_cwd = os.getcwd()
+            os.chdir(tmpdir)
+            try:
+                mock_pset = Mock()
+                mock_pset.getPhotos = Mock()
+
+                def mock_get_filename(pset: object, photo: object, suffix: Optional[str]) -> str:
+                    return "test"
+
+                download_list(
+                    mock_pset,
+                    "Test Album",
+                    mock_get_filename,
+                    None,
+                )
+
+                assert Path("Test Album").is_dir()
+            finally:
+                os.chdir(original_cwd)
+
+    @patch("flickr_download.flick_download.Walker")
+    @patch("flickr_download.flick_download.do_download_photo")
+    def test_download_list_iterates_photos(self, mock_do_download: Mock, mock_walker: Mock) -> None:
+        """download_list calls do_download_photo for each photo."""
+        mock_photo1 = Mock()
+        mock_photo2 = Mock()
+        mock_walker.return_value = iter([mock_photo1, mock_photo2])
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            original_cwd = os.getcwd()
+            os.chdir(tmpdir)
+            try:
+                mock_pset = Mock()
+                mock_pset.getPhotos = Mock()
+
+                def mock_get_filename(pset: object, photo: object, suffix: Optional[str]) -> str:
+                    return "test"
+
+                download_list(
+                    mock_pset,
+                    "Test Album",
+                    mock_get_filename,
+                    None,
+                )
+
+                assert mock_do_download.call_count == 2
+            finally:
+                os.chdir(original_cwd)
