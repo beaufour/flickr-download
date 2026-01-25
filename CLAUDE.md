@@ -20,8 +20,8 @@ uv run coverage run -m pytest
 uv run coverage html -d coverage
 
 # Code quality checks (also run via pre-commit)
-uv run flake8 flickr_download tests
-uv run black --check flickr_download tests
+uv run ruff check flickr_download tests
+uv run ruff format --check flickr_download tests
 uv run mypy flickr_download
 
 # Run all pre-commit hooks
@@ -49,7 +49,6 @@ uv run flickr_download [args]
 
 ## Code Quality Standards
 
-- **Black**: 100-char line length
+- **Ruff**: Linting and formatting with 100-char line length
 - **MyPy**: Type checking enabled
-- **Flake8**: 100-char line length
 - Python 3.10-3.13 supported
