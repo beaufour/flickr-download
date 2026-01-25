@@ -10,25 +10,25 @@ Flickr Download is a command-line utility for downloading photos from Flickr. It
 
 ```bash
 # Install dependencies
-poetry install --with dev,extras
+uv sync --all-extras
 
 # Run tests
-poetry run pytest -v
+uv run pytest -v
 
 # Run tests with coverage
-poetry run coverage run -m pytest
-poetry run coverage html -d coverage
+uv run coverage run -m pytest
+uv run coverage html -d coverage
 
 # Code quality checks (also run via pre-commit)
-poetry run flake8 flickr_download tests
-poetry run black --check flickr_download tests
-poetry run mypy flickr_download
+uv run flake8 flickr_download tests
+uv run black --check flickr_download tests
+uv run mypy flickr_download
 
 # Run all pre-commit hooks
-poetry run pre-commit run --all-files
+uv run pre-commit run --all-files
 
 # Run the CLI
-poetry run flickr_download [args]
+uv run flickr_download [args]
 ```
 
 ## Architecture
@@ -50,6 +50,6 @@ poetry run flickr_download [args]
 ## Code Quality Standards
 
 - **Black**: 100-char line length
-- **MyPy**: Strict mode enabled - full type annotations required
+- **MyPy**: Type checking enabled
 - **Flake8**: 100-char line length
-- Python 3.9-3.12 supported
+- Python 3.10-3.13 supported

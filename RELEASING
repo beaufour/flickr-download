@@ -2,8 +2,10 @@
 
 To release a new version of the tool use the `./release.sh` script.
 
-## PyPi Authentication
+## PyPI Authentication
 
-To configure auth for PyPi for the first time do:
+To configure auth for PyPI for the first time do:
 
-    poetry config pypi-token.pypi my-token
+    uv publish --token my-token
+
+Or set the `UV_PUBLISH_TOKEN` environment variable.
