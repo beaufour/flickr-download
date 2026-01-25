@@ -2,9 +2,15 @@
 
 import tempfile
 from pathlib import Path
+from typing import Optional
 from unittest.mock import Mock, patch
 
-from flickr_download.flick_download import _get_metadata_db, _load_defaults, find_user
+from flickr_download.flick_download import (
+    _get_metadata_db,
+    _load_defaults,
+    do_download_photo,
+    find_user,
+)
 
 
 class TestFindUser:
@@ -138,3 +144,193 @@ class TestMetadataDb:
             assert row == ("photo123", "Original", " (Original)")
 
             conn.close()
+
+
+class TestDoDownloadPhoto:
+    """Tests for do_download_photo function."""
+
+    def test_skip_already_downloaded_with_metadata_db(self) -> None:
+        """do_download_photo skips photos already in metadata db."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Set up metadata db with existing download
+            conn = _get_metadata_db(tmpdir)
+            conn.execute(
+                "INSERT INTO downloads VALUES (?, ?, ?)",
+                ("123", "Original", " (Original)"),
+            )
+            conn.commit()
+
+            mock_photo = Mock()
+            mock_photo.id = "123"
+            mock_photo.title = "Test Photo"
+            mock_photo.save = Mock()
+
+            mock_pset = Mock()
+            mock_pset.title = "Test Set"
+
+            def mock_get_filename(pset: object, photo: object, suffix: Optional[str]) -> str:
+                return "Test Photo"
+
+            # Should skip and not call save
+            do_download_photo(
+                tmpdir,
+                mock_pset,
+                mock_photo,
+                "Original",
+                " (Original)",
+                mock_get_filename,
+                metadata_db=conn,
+            )
+
+            mock_photo.save.assert_not_called()
+            conn.close()
+
+    def test_skip_existing_file(self) -> None:
+        """do_download_photo skips if file already exists."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create existing file
+            existing_file = Path(tmpdir) / "Test Photo.jpg"
+            existing_file.touch()
+
+            mock_photo = Mock()
+            mock_photo.id = "123"
+            mock_photo.title = "Test Photo"
+            mock_photo.__getitem__ = Mock(return_value=True)  # loaded = True
+            mock_photo._getOutputFilename = Mock(return_value=str(existing_file))
+            mock_photo.save = Mock()
+
+            mock_pset = Mock()
+            mock_pset.title = "Test Set"
+
+            def mock_get_filename(pset: object, photo: object, suffix: Optional[str]) -> str:
+                return "Test Photo"
+
+            do_download_photo(
+                tmpdir,
+                mock_pset,
+                mock_photo,
+                None,
+                "",
+                mock_get_filename,
+            )
+
+            # Should not call save since file exists
+            mock_photo.save.assert_not_called()
+
+    @patch("flickr_download.flick_download.set_file_time")
+    def test_download_photo_saves_file(self, mock_set_file_time: Mock) -> None:
+        """do_download_photo saves new photo."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target_file = Path(tmpdir) / "Test Photo.jpg"
+
+            mock_photo = Mock()
+            mock_photo.id = "123"
+            mock_photo.title = "Test Photo"
+            mock_photo.__getitem__ = Mock(
+                side_effect=lambda k: {
+                    "loaded": True,
+                    "taken": "2020-01-01 12:00:00",
+                }.get(k)
+            )
+            mock_photo._getOutputFilename = Mock(return_value=str(target_file))
+            mock_photo._getLargestSizeLabel = Mock(return_value="Original")
+            mock_photo.save = Mock()
+            mock_photo.get = Mock(return_value=None)
+
+            mock_pset = Mock()
+            mock_pset.title = "Test Set"
+
+            def mock_get_filename(pset: object, photo: object, suffix: Optional[str]) -> str:
+                return "Test Photo"
+
+            do_download_photo(
+                tmpdir,
+                mock_pset,
+                mock_photo,
+                None,
+                "",
+                mock_get_filename,
+            )
+
+            mock_photo.save.assert_called_once()
+
+    @patch("flickr_download.flick_download.set_file_time")
+    def test_download_photo_records_in_metadata_db(self, mock_set_file_time: Mock) -> None:
+        """do_download_photo records download in metadata db."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            conn = _get_metadata_db(tmpdir)
+            target_file = Path(tmpdir) / "Test Photo.jpg"
+
+            mock_photo = Mock()
+            mock_photo.id = "456"
+            mock_photo.title = "Test Photo"
+            mock_photo.__getitem__ = Mock(
+                side_effect=lambda k: {
+                    "loaded": True,
+                    "taken": "2020-01-01 12:00:00",
+                }.get(k)
+            )
+            mock_photo._getOutputFilename = Mock(return_value=str(target_file))
+            mock_photo._getLargestSizeLabel = Mock(return_value="Original")
+            mock_photo.save = Mock()
+            mock_photo.get = Mock(return_value=None)
+
+            mock_pset = Mock()
+            mock_pset.title = "Test Set"
+
+            def mock_get_filename(pset: object, photo: object, suffix: Optional[str]) -> str:
+                return "Test Photo"
+
+            do_download_photo(
+                tmpdir,
+                mock_pset,
+                mock_photo,
+                "Large",
+                " (Large)",
+                mock_get_filename,
+                metadata_db=conn,
+            )
+
+            # Verify recorded in db
+            cursor = conn.execute("SELECT * FROM downloads WHERE photo_id = ?", ("456",))
+            row = cursor.fetchone()
+            assert row == ("456", "Large", " (Large)")
+            conn.close()
+
+    def test_skip_download_flag(self) -> None:
+        """do_download_photo respects skip_download flag."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target_file = Path(tmpdir) / "Test Photo.jpg"
+
+            mock_photo = Mock()
+            mock_photo.id = "123"
+            mock_photo.title = "Test Photo"
+            mock_photo.__getitem__ = Mock(
+                side_effect=lambda k: {
+                    "loaded": True,
+                    "taken": "2020-01-01 12:00:00",
+                }.get(k)
+            )
+            mock_photo._getOutputFilename = Mock(return_value=str(target_file))
+            mock_photo._getLargestSizeLabel = Mock(return_value="Original")
+            mock_photo.save = Mock()
+            mock_photo.get = Mock(return_value=None)
+
+            mock_pset = Mock()
+            mock_pset.title = "Test Set"
+
+            def mock_get_filename(pset: object, photo: object, suffix: Optional[str]) -> str:
+                return "Test Photo"
+
+            do_download_photo(
+                tmpdir,
+                mock_pset,
+                mock_photo,
+                None,
+                "",
+                mock_get_filename,
+                skip_download=True,
+            )
+
+            # Should not call save with skip_download=True
+            mock_photo.save.assert_not_called()
