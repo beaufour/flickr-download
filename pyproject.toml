@@ -16,7 +16,7 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
-    "flickr-api>=0.7.7,<0.8",
+    "flickr-api>=0.8.0,<0.9",
     "python-dateutil>=2.8.1,<3",
     "PyYAML>=5.3,<7.0",
     "pathvalidate>=2.5.2,<4.0.0",
