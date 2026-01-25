@@ -1,4 +1,6 @@
-from flickr_download.logging_utils import _redact
+import logging
+
+from flickr_download.logging_utils import APIKeysRedacter, _redact
 
 
 def test_log_redaction() -> None:
@@ -31,3 +33,43 @@ def test_log_redaction() -> None:
         "format=json&nojsoncallback=1&oauth_body_hash=***&"
         "oauth_signature_method=HMAC-SHA1"
     )
+
+
+def test_api_keys_redacter_format() -> None:
+    """Test APIKeysRedacter.format method."""
+    # Create a handler and record
+    handler = logging.StreamHandler()
+    redacter = APIKeysRedacter(handler.formatter)
+
+    record = logging.LogRecord(
+        name="test",
+        level=logging.INFO,
+        pathname="test.py",
+        lineno=1,
+        msg="https://example.com/?oauth_token=secret123",
+        args=(),
+        exc_info=None,
+    )
+
+    result = redacter.format(record)
+    assert "secret123" not in result
+    assert "oauth_token=***" in result
+
+
+def test_api_keys_redacter_format_no_sensitive_data() -> None:
+    """Test APIKeysRedacter.format with no sensitive data."""
+    handler = logging.StreamHandler()
+    redacter = APIKeysRedacter(handler.formatter)
+
+    record = logging.LogRecord(
+        name="test",
+        level=logging.INFO,
+        pathname="test.py",
+        lineno=1,
+        msg="Just a normal message",
+        args=(),
+        exc_info=None,
+    )
+
+    result = redacter.format(record)
+    assert "Just a normal message" in result
