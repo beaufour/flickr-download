@@ -10,12 +10,140 @@ import requests.exceptions
 from flickr_api.flickrerrors import FlickrAPIError, FlickrError
 
 from flickr_download.flick_download import (
+    _download_file,
+    _get_extension_from_url,
     _get_metadata_db,
+    _get_url_from_extras,
     _load_defaults,
     do_download_photo,
     download_list,
     find_user,
 )
+
+
+class TestGetUrlFromExtras:
+    """Tests for _get_url_from_extras function."""
+
+    def test_get_url_with_specific_size_label(self) -> None:
+        """Returns URL for specific size label."""
+        mock_photo = Mock()
+        mock_photo.get = Mock(
+            side_effect=lambda k: {"url_l": "https://example.com/large.jpg"}.get(k)
+        )
+
+        result = _get_url_from_extras(mock_photo, "Large")
+        assert result == "https://example.com/large.jpg"
+
+    def test_get_url_largest_available(self) -> None:
+        """Returns largest available URL when no size specified."""
+        mock_photo = Mock()
+        # Only medium size available
+        mock_photo.get = Mock(
+            side_effect=lambda k: {"url_m": "https://example.com/medium.jpg"}.get(k)
+        )
+
+        result = _get_url_from_extras(mock_photo, None)
+        assert result == "https://example.com/medium.jpg"
+
+    def test_get_url_prefers_original(self) -> None:
+        """Prefers original URL when available."""
+        mock_photo = Mock()
+        mock_photo.get = Mock(
+            side_effect=lambda k: {
+                "url_o": "https://example.com/original.jpg",
+                "url_l": "https://example.com/large.jpg",
+            }.get(k)
+        )
+
+        result = _get_url_from_extras(mock_photo, None)
+        assert result == "https://example.com/original.jpg"
+
+    def test_returns_none_when_no_urls(self) -> None:
+        """Returns None when no URLs in extras."""
+        mock_photo = Mock()
+        mock_photo.get = Mock(return_value=None)
+
+        result = _get_url_from_extras(mock_photo, None)
+        assert result is None
+
+    def test_returns_none_for_unknown_size_label(self) -> None:
+        """Returns None for unknown size label."""
+        mock_photo = Mock()
+        mock_photo.get = Mock(return_value=None)
+
+        result = _get_url_from_extras(mock_photo, "UnknownSize")
+        assert result is None
+
+
+class TestGetExtensionFromUrl:
+    """Tests for _get_extension_from_url function."""
+
+    def test_extracts_jpg_extension(self) -> None:
+        """Extracts .jpg extension from URL."""
+        url = "https://farm1.staticflickr.com/123/456_abc_o.jpg"
+        assert _get_extension_from_url(url) == ".jpg"
+
+    def test_extracts_png_extension(self) -> None:
+        """Extracts .png extension from URL."""
+        url = "https://farm1.staticflickr.com/123/456_abc_o.png"
+        assert _get_extension_from_url(url) == ".png"
+
+    def test_handles_query_string(self) -> None:
+        """Ignores query string when extracting extension."""
+        url = "https://farm1.staticflickr.com/123/456_abc_o.jpg?size=large"
+        assert _get_extension_from_url(url) == ".jpg"
+
+    def test_defaults_to_jpg_when_no_extension(self) -> None:
+        """Defaults to .jpg when URL has no extension."""
+        url = "https://farm1.staticflickr.com/123/456_abc_o"
+        assert _get_extension_from_url(url) == ".jpg"
+
+
+class TestDownloadFile:
+    """Tests for _download_file function."""
+
+    @patch("flickr_download.flick_download.requests.get")
+    def test_downloads_file_successfully(self, mock_get: Mock) -> None:
+        """Downloads file from URL to local path."""
+        mock_response = Mock()
+        mock_response.iter_content = Mock(return_value=[b"test content"])
+        mock_response.raise_for_status = Mock()
+        mock_get.return_value = mock_response
+
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            fname = f.name
+
+        try:
+            _download_file("https://example.com/photo.jpg", fname)
+
+            mock_get.assert_called_once_with(
+                "https://example.com/photo.jpg", stream=True, timeout=60
+            )
+            with open(fname, "rb") as f:
+                assert f.read() == b"test content"
+        finally:
+            Path(fname).unlink(missing_ok=True)
+
+    @patch("flickr_download.flick_download.requests.get")
+    def test_raises_on_http_error(self, mock_get: Mock) -> None:
+        """Raises exception on HTTP error."""
+        import requests
+
+        mock_response = Mock()
+        mock_response.raise_for_status = Mock(side_effect=requests.HTTPError("404 Not Found"))
+        mock_get.return_value = mock_response
+
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            fname = f.name
+
+        try:
+            try:
+                _download_file("https://example.com/notfound.jpg", fname)
+                assert False, "Expected HTTPError"
+            except requests.HTTPError:
+                pass  # Expected
+        finally:
+            Path(fname).unlink(missing_ok=True)
 
 
 class TestFindUser:
@@ -203,6 +331,8 @@ class TestDoDownloadPhoto:
             mock_photo.__getitem__ = Mock(return_value=True)  # loaded = True
             mock_photo._getOutputFilename = Mock(return_value=str(existing_file))
             mock_photo.save = Mock()
+            # Return None for URL extras to trigger fallback to _getOutputFilename
+            mock_photo.get = Mock(return_value=None)
 
             mock_pset = Mock()
             mock_pset.title = "Test Set"
@@ -339,6 +469,50 @@ class TestDoDownloadPhoto:
 
             # Should not call save with skip_download=True
             mock_photo.save.assert_not_called()
+
+    @patch("flickr_download.flick_download._download_file")
+    @patch("flickr_download.flick_download.set_file_time")
+    def test_download_uses_prefetched_url(
+        self, mock_set_file_time: Mock, mock_download_file: Mock
+    ) -> None:
+        """do_download_photo uses pre-fetched URL when available."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            mock_photo = Mock()
+            mock_photo.id = "123"
+            mock_photo.title = "Test Photo"
+            mock_photo.__getitem__ = Mock(
+                side_effect=lambda k: {
+                    "loaded": True,
+                    "taken": "2020-01-01 12:00:00",
+                }.get(k)
+            )
+            # Return prefetched URL
+            mock_photo.get = Mock(
+                side_effect=lambda k: {"url_o": "https://example.com/original.jpg"}.get(k)
+            )
+            mock_photo.save = Mock()
+
+            mock_pset = Mock()
+            mock_pset.title = "Test Set"
+
+            def mock_get_filename(pset: object, photo: object, suffix: Optional[str]) -> str:
+                return "Test Photo"
+
+            do_download_photo(
+                tmpdir,
+                mock_pset,
+                mock_photo,
+                None,
+                "",
+                mock_get_filename,
+            )
+
+            # Should use _download_file instead of photo.save
+            mock_download_file.assert_called_once()
+            mock_photo.save.assert_not_called()
+            # Verify correct URL was used
+            call_args = mock_download_file.call_args[0]
+            assert call_args[0] == "https://example.com/original.jpg"
 
 
 class TestDownloadList:
