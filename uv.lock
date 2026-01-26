@@ -287,7 +287,6 @@ version = "0.3.8"
 source = { editable = "." }
 dependencies = [
     { name = "flickr-api" },
-    { name = "interrogate" },
     { name = "pathvalidate" },
     { name = "python-dateutil" },
     { name = "pyyaml" },
@@ -295,24 +294,10 @@ dependencies = [
     { name = "usingversion" },
 ]
 
-[package.optional-dependencies]
-dev = [
-    { name = "mypy" },
-    { name = "pre-commit" },
-    { name = "pytest" },
-    { name = "ruff" },
-    { name = "types-python-dateutil" },
-    { name = "types-pyyaml" },
-    { name = "types-requests" },
-]
-extras = [
-    { name = "coverage" },
-    { name = "python-coveralls" },
-]
-
 [package.dev-dependencies]
 dev = [
     { name = "coverage" },
+    { name = "interrogate" },
     { name = "mypy" },
     { name = "pre-commit" },
     { name = "pytest" },
@@ -325,28 +310,18 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "coverage", marker = "extra == 'extras'", specifier = ">=6.5" },
     { name = "flickr-api", specifier = ">=0.8.0" },
-    { name = "interrogate", specifier = ">=1.5.0" },
-    { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.0" },
     { name = "pathvalidate", specifier = ">=2.5.2" },
-    { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=2.20" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.2" },
-    { name = "python-coveralls", marker = "extra == 'extras'", specifier = ">=2.9.3" },
     { name = "python-dateutil", specifier = ">=2.8.1" },
     { name = "pyyaml", specifier = ">=5.3" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.9" },
     { name = "setuptools", specifier = ">=75.1" },
-    { name = "types-python-dateutil", marker = "extra == 'dev'" },
-    { name = "types-pyyaml", marker = "extra == 'dev'" },
-    { name = "types-requests", marker = "extra == 'dev'" },
     { name = "usingversion", specifier = ">=0.1.2" },
 ]
-provides-extras = ["dev", "extras"]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "coverage", specifier = ">=6.5" },
+    { name = "interrogate", specifier = ">=1.5.0" },
     { name = "mypy", specifier = ">=1.0" },
     { name = "pre-commit", specifier = ">=2.20" },
     { name = "pytest", specifier = ">=7.2" },
