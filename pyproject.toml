@@ -25,21 +25,6 @@ dependencies = [
     "setuptools>=75.1",
 ]
 
-[project.optional-dependencies]
-dev = [
-    "pytest>=7.2",
-    "ruff>=0.9",
-    "pre-commit>=2.20",
-    "mypy>=1.0",
-    "types-PyYAML",
-    "types-python-dateutil",
-    "types-requests",
-]
-extras = [
-    "coverage>=6.5",
-    "python-coveralls>=2.9.3",
-]
-
 [project.scripts]
 flickr_download = "flickr_download.flick_download:main"
 
