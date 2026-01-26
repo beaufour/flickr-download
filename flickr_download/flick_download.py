@@ -9,7 +9,7 @@ import os
 import sqlite3
 import sys
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 import flickr_api as Flickr
 import yaml
@@ -124,7 +124,7 @@ def download_set(
 
 
 def download_list(
-    pset: Photoset,
+    pset: Union[Photoset, Person],
     photos_title: str,
     get_filename: FilenameHandler,
     size_label: Optional[str],
@@ -142,7 +142,7 @@ def download_list(
     :param save_json: save photo info as .json file
     """
 
-    photos = Walker(pset.getPhotos)
+    photos: Walker[Photo] = Walker(pset.getPhotos)
 
     suffix = f" ({size_label})" if size_label else ""
 
@@ -185,7 +185,7 @@ def download_list(
 
 def do_download_photo(
     dirname: str,
-    pset: Optional[Photoset],
+    pset: Optional[Union[Photoset, Person]],
     photo: Photo,
     size_label: Optional[str],
     suffix: Optional[str],
@@ -345,7 +345,7 @@ def download_user(
     :param save_json: save photo info as .json file
     """
     user = find_user(username)
-    photosets = Walker(user.getPhotosets)  # pylint: disable=E1101
+    photosets: Walker[Photoset] = Walker(user.getPhotosets)  # pylint: disable=E1101
     for photoset in photosets:
         download_set(
             photoset.id, get_filename, size_label, skip_download, save_json, metadata_store
@@ -380,7 +380,7 @@ def print_sets(username: str) -> None:
     :param username: the name of the user
     """
     user = find_user(username)
-    photosets = Walker(user.getPhotosets)  # pylint: disable=E1101
+    photosets: Walker[Photoset] = Walker(user.getPhotosets)  # pylint: disable=E1101
     for photoset in photosets:
         print(f"{photoset.id} - {photoset.title}")
 
