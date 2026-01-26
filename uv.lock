@@ -325,32 +325,32 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "coverage", marker = "extra == 'extras'", specifier = ">=6.5,<8.0" },
-    { name = "flickr-api", specifier = ">=0.8.0,<0.9" },
-    { name = "interrogate", specifier = ">=1.5.0,<2" },
+    { name = "coverage", marker = "extra == 'extras'", specifier = ">=6.5" },
+    { name = "flickr-api", specifier = ">=0.8.0" },
+    { name = "interrogate", specifier = ">=1.5.0" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.0" },
-    { name = "pathvalidate", specifier = ">=2.5.2,<4.0.0" },
-    { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=2.20,<5.0" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.2,<9.0" },
-    { name = "python-coveralls", marker = "extra == 'extras'", specifier = ">=2.9.3,<3" },
-    { name = "python-dateutil", specifier = ">=2.8.1,<3" },
-    { name = "pyyaml", specifier = ">=5.3,<7.0" },
+    { name = "pathvalidate", specifier = ">=2.5.2" },
+    { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=2.20" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.2" },
+    { name = "python-coveralls", marker = "extra == 'extras'", specifier = ">=2.9.3" },
+    { name = "python-dateutil", specifier = ">=2.8.1" },
+    { name = "pyyaml", specifier = ">=5.3" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.9" },
-    { name = "setuptools", specifier = ">=75.1,<81.0" },
+    { name = "setuptools", specifier = ">=75.1" },
     { name = "types-python-dateutil", marker = "extra == 'dev'" },
     { name = "types-pyyaml", marker = "extra == 'dev'" },
     { name = "types-requests", marker = "extra == 'dev'" },
-    { name = "usingversion", specifier = ">=0.1.2,<0.2" },
+    { name = "usingversion", specifier = ">=0.1.2" },
 ]
 provides-extras = ["dev", "extras"]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "coverage", specifier = ">=6.5,<8.0" },
+    { name = "coverage", specifier = ">=6.5" },
     { name = "mypy", specifier = ">=1.0" },
-    { name = "pre-commit", specifier = ">=2.20,<5.0" },
-    { name = "pytest", specifier = ">=7.2,<9.0" },
-    { name = "python-coveralls", specifier = ">=2.9.3,<3" },
+    { name = "pre-commit", specifier = ">=2.20" },
+    { name = "pytest", specifier = ">=7.2" },
+    { name = "python-coveralls", specifier = ">=2.9.3" },
     { name = "ruff", specifier = ">=0.9" },
     { name = "types-python-dateutil" },
     { name = "types-pyyaml" },
