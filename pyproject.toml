@@ -20,24 +20,8 @@ dependencies = [
     "python-dateutil>=2.8.1",
     "PyYAML>=5.3",
     "pathvalidate>=2.5.2",
-    "interrogate>=1.5.0",
     "usingversion>=0.1.2",
     "setuptools>=75.1",
-]
-
-[project.optional-dependencies]
-dev = [
-    "pytest>=7.2",
-    "ruff>=0.9",
-    "pre-commit>=2.20",
-    "mypy>=1.0",
-    "types-PyYAML",
-    "types-python-dateutil",
-    "types-requests",
-]
-extras = [
-    "coverage>=6.5",
-    "python-coveralls>=2.9.3",
 ]
 
 [project.scripts]
@@ -61,6 +45,7 @@ dev = [
     "types-requests",
     "coverage>=6.5",
     "python-coveralls>=2.9.3",
+    "interrogate>=1.5.0",
 ]
 
 [tool.ruff]
@@ -76,3 +61,13 @@ quote-style = "double"
 
 [tool.interrogate]
 exclude = ["tests"]
+
+[tool.mypy]
+follow_imports = "silent"
+strict_optional = true
+warn_redundant_casts = true
+disallow_any_generics = true
+check_untyped_defs = true
+no_implicit_reexport = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
