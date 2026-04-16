@@ -93,6 +93,35 @@ def _load_defaults() -> Dict[str, Any]:
     return {}
 
 
+def _check_file_exists_by_id(dirname: str, photo_id: str) -> Optional[str]:
+    """Check if a file for a given photo ID already exists in the directory.
+
+    This allows fast local-first checking without API calls when using
+    ID-based naming (id, id_and_title, title_and_id).
+
+    :param dirname: directory to check
+    :param photo_id: the photo ID to look for
+    :returns: path to existing file if found, None otherwise
+    """
+    import glob
+
+    # Check for files that start with the photo ID (for id and id_and_title naming)
+    pattern = os.path.join(dirname, f"{photo_id}*")
+    matches = glob.glob(pattern)
+    if matches:
+        # Return the first match (should typically be only one)
+        return matches[0]
+
+    # Also check for files that contain the photo ID (for title_and_id naming)
+    # This is more expensive so only do it if the first pattern didn't match
+    pattern = os.path.join(dirname, f"*-{photo_id}.*")
+    matches = glob.glob(pattern)
+    if matches:
+        return matches[0]
+
+    return None
+
+
 def _get_metadata_db(dirname: str) -> sqlite3.Connection:
     conn = sqlite3.connect(Path(dirname) / ".metadata.db")
     conn.execute(
@@ -207,6 +236,7 @@ def do_download_photo(
     :param metadata_db: optional metadata database to record downloads
         in
     """
+    # 1. Local-first check: metadata DB (no API call)
     if metadata_db:
         if metadata_db.execute(
             "SELECT * FROM downloads WHERE photo_id = ? AND size_label = ? AND suffix = ?",
@@ -214,6 +244,14 @@ def do_download_photo(
         ).fetchone():
             logging.info("Skipping download of already downloaded photo with ID: %s", photo.id)
             return
+
+    # 2. Local-first check: file exists by ID pattern (no API call)
+    # This helps with resuming large downloads without needing metadata_db
+    existing_file = _check_file_exists_by_id(dirname, photo.id)
+    if existing_file and not save_json:
+        # Found existing file and not saving JSON, can skip entirely
+        logging.info("Skipping %s, as it exists already (local-first check)", existing_file)
+        return
 
     fname = get_full_path(dirname, get_filename(pset, photo, suffix))
     try:
