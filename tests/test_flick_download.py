@@ -10,12 +10,62 @@ import requests.exceptions
 from flickr_api.flickrerrors import FlickrAPIError, FlickrError
 
 from flickr_download.flick_download import (
+    _check_file_exists_by_id,
     _get_metadata_db,
     _load_defaults,
     do_download_photo,
     download_list,
     find_user,
 )
+
+
+class TestCheckFileExistsById:
+    """Tests for _check_file_exists_by_id function."""
+
+    def test_finds_file_starting_with_id(self) -> None:
+        """Finds file that starts with photo ID (id naming)."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create file starting with ID
+            Path(tmpdir, "12345.jpg").touch()
+
+            result = _check_file_exists_by_id(tmpdir, "12345")
+            assert result is not None
+            assert "12345" in result
+
+    def test_finds_file_with_id_and_title(self) -> None:
+        """Finds file with ID at start (id_and_title naming)."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create file with ID-title pattern
+            Path(tmpdir, "12345-My Photo.jpg").touch()
+
+            result = _check_file_exists_by_id(tmpdir, "12345")
+            assert result is not None
+            assert "12345" in result
+
+    def test_finds_file_with_title_and_id(self) -> None:
+        """Finds file with ID at end (title_and_id naming)."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create file with title-ID pattern
+            Path(tmpdir, "My Photo-12345.jpg").touch()
+
+            result = _check_file_exists_by_id(tmpdir, "12345")
+            assert result is not None
+            assert "12345" in result
+
+    def test_returns_none_when_no_match(self) -> None:
+        """Returns None when no file matches photo ID."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create file with different ID
+            Path(tmpdir, "99999.jpg").touch()
+
+            result = _check_file_exists_by_id(tmpdir, "12345")
+            assert result is None
+
+    def test_returns_none_for_empty_directory(self) -> None:
+        """Returns None for empty directory."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            result = _check_file_exists_by_id(tmpdir, "12345")
+            assert result is None
 
 
 class TestFindUser:
@@ -189,6 +239,38 @@ class TestDoDownloadPhoto:
 
             mock_photo.save.assert_not_called()
             conn.close()
+
+    def test_skip_existing_file_by_id_pattern(self) -> None:
+        """do_download_photo skips if file exists matching photo ID (local-first check)."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create existing file matching photo ID
+            existing_file = Path(tmpdir) / "12345-Some Title.jpg"
+            existing_file.touch()
+
+            mock_photo = Mock()
+            mock_photo.id = "12345"
+            mock_photo.title = "Different Title"
+            mock_photo.save = Mock()
+            mock_photo._getOutputFilename = Mock()  # Should not be called
+
+            mock_pset = Mock()
+            mock_pset.title = "Test Set"
+
+            def mock_get_filename(pset: object, photo: object, suffix: Optional[str]) -> str:
+                return "Different Title"
+
+            do_download_photo(
+                tmpdir,
+                mock_pset,
+                mock_photo,
+                None,
+                "",
+                mock_get_filename,
+            )
+
+            # Should skip due to local-first check - no API calls made
+            mock_photo.save.assert_not_called()
+            mock_photo._getOutputFilename.assert_not_called()
 
     def test_skip_existing_file(self) -> None:
         """do_download_photo skips if file already exists."""
