@@ -16,12 +16,13 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
+    "certifi>=2026.10.19",
     "flickr-api>=0.8.0",
     "python-dateutil>=2.8.1",
     "PyYAML>=5.3",
     "pathvalidate>=2.5.2",
     "usingversion>=0.1.2",
-    "setuptools>=75.1",
+    "setuptools>=84.1.0",
     "urllib3>=2.8.0",
 ]
 
@@ -39,8 +40,10 @@ build-backend = "hatchling.build"
 dev = [
     "pytest>=7.2",
     "ruff>=0.9",
-    "pre-commit>=2.20",
-    "virtualenv>=21.7.12",
+    # Patched filelock requires Python 3.11; run pre-commit with 3.11+.
+    "pre-commit>=2.20; python_version >= '3.11'",
+    "virtualenv>=21.14.9; python_version >= '3.11'",
+    "filelock>=4.2.1; python_version >= '3.11'",
     "mypy>=1.0",
     "types-PyYAML",
     "types-python-dateutil",
