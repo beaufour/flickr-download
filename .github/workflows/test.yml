@@ -33,6 +33,22 @@ jobs:
           name: code-coverage-report-${{ matrix.python-version }}
           path: coverage
       - name: Coveralls
-        uses: coverallsapp/github-action@master
+        uses: coverallsapp/github-action@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          parallel: true
+          flag-name: python-${{ matrix.python-version }}
+
+  coveralls-finish:
+    needs: [build]
+    if: always()
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - name: Coveralls finish
+        uses: coverallsapp/github-action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          parallel-finished: true
+          carryforward: "python-3.10,python-3.11,python-3.12,python-3.13"
