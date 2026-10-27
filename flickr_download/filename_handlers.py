@@ -1,16 +1,16 @@
 """Defines a set of functions that handle naming of the downloaded files."""
 
 from collections import defaultdict
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Union
 
-from flickr_api.objects import Photo, Photoset
+from flickr_api.objects import Person, Photo, Photoset
 
 from flickr_download.utils import get_filename
 
 # The default handler if none is specified
 DEFAULT_HANDLER = "title_increment"
 
-FilenameHandler = Callable[[Optional[Photoset], Photo, Optional[str]], str]
+FilenameHandler = Callable[[Optional[Union[Photoset, Person]], Photo, Optional[str]], str]
 
 
 def _get_short_docstring(docstring: Optional[str]) -> Optional[str]:
@@ -22,7 +22,7 @@ def _get_short_docstring(docstring: Optional[str]) -> Optional[str]:
     return docstring.split(".")[0].strip() if docstring else None
 
 
-def title(pset: Optional[Photoset], photo: Photo, suffix: Optional[str]) -> str:
+def title(pset: Optional[Union[Photoset, Person]], photo: Photo, suffix: Optional[str]) -> str:
     """Name file after title (falls back to photo id).
 
     :param pset: the photoset
@@ -36,7 +36,7 @@ def title(pset: Optional[Photoset], photo: Photo, suffix: Optional[str]) -> str:
     return get_filename(f"{photo.title}{suffix}")
 
 
-def idd(_: Optional[Photoset], photo: Photo, suffix: Optional[str]) -> str:
+def idd(_: Optional[Union[Photoset, Person]], photo: Photo, suffix: Optional[str]) -> str:
     """Name file after photo id.
 
     :param pset: the photoset
@@ -47,7 +47,9 @@ def idd(_: Optional[Photoset], photo: Photo, suffix: Optional[str]) -> str:
     return f"{photo.id}{suffix}"
 
 
-def title_and_id(pset: Optional[Photoset], photo: Photo, suffix: Optional[str]) -> str:
+def title_and_id(
+    pset: Optional[Union[Photoset, Person]], photo: Photo, suffix: Optional[str]
+) -> str:
     """Name file after title and photo id.
 
     :param pset: the photoset
@@ -61,7 +63,9 @@ def title_and_id(pset: Optional[Photoset], photo: Photo, suffix: Optional[str]) 
     return get_filename(f"{photo.title}-{photo.id}{suffix}")
 
 
-def id_and_title(pset: Optional[Photoset], photo: Photo, suffix: Optional[str]) -> str:
+def id_and_title(
+    pset: Optional[Union[Photoset, Person]], photo: Photo, suffix: Optional[str]
+) -> str:
     """Name file after photo id and title.
 
     :param pset: the photoset
@@ -79,7 +83,9 @@ def id_and_title(pset: Optional[Photoset], photo: Photo, suffix: Optional[str]) 
 INCREMENT_INDEX: Dict[Any, Any] = defaultdict(lambda: defaultdict(int))
 
 
-def title_increment(pset: Optional[Photoset], photo: Photo, suffix: Optional[str]) -> str:
+def title_increment(
+    pset: Optional[Union[Photoset, Person]], photo: Photo, suffix: Optional[str]
+) -> str:
     """Name file after photo title, but add an incrementing counter on
     duplicates.
 
