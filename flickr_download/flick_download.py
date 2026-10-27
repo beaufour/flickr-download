@@ -11,7 +11,7 @@ import re
 import sqlite3
 import sys
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Set, Union
 
 import flickr_api as Flickr
 import requests
@@ -211,6 +211,10 @@ def _get_metadata_db(dirname: str) -> sqlite3.Connection:
     conn.execute(
         "CREATE TABLE IF NOT EXISTS downloads (photo_id text, size_label text, suffix text)"
     )
+    # Databases created before filename tracking lack the "fname" column.
+    columns = {row[1] for row in conn.execute("PRAGMA table_info(downloads)")}
+    if "fname" not in columns:
+        conn.execute("ALTER TABLE downloads ADD COLUMN fname text")
     return conn
 
 
@@ -221,6 +225,9 @@ def download_set(
     skip_download: bool = False,
     save_json: bool = False,
     metadata_store: Optional[bool] = None,
+    naming: Optional[str] = None,
+    remove_deleted: bool = False,
+    dry_run: bool = False,
 ) -> None:
     """Download the set with 'set_id' to the current directory.
 
@@ -229,10 +236,23 @@ def download_set(
     :param size_label: size to download (or None for largest available)
     :param skip_download: do not actually download the photo
     :param save_json: save photo info as .json file
+    :param naming: naming mode used to create file names (needed for
+        remove_deleted to map local files to photo IDs)
+    :param remove_deleted: remove local files whose photo is no longer on Flickr
+    :param dry_run: with remove_deleted, only report what would be removed
     """
     pset = Flickr.Photoset(id=set_id)
     download_list(
-        pset, pset.title, get_filename, size_label, skip_download, save_json, metadata_store
+        pset,
+        pset.title,
+        get_filename,
+        size_label,
+        skip_download,
+        save_json,
+        metadata_store,
+        naming,
+        remove_deleted,
+        dry_run,
     )
 
 
@@ -244,6 +264,9 @@ def download_list(
     skip_download: bool = False,
     save_json: bool = False,
     metadata_store: Optional[bool] = None,
+    naming: Optional[str] = None,
+    remove_deleted: bool = False,
+    dry_run: bool = False,
 ) -> None:
     """Download all the photos in the given photo list.
 
@@ -253,6 +276,10 @@ def download_list(
     :param size_label: size to download (or None for largest available)
     :param skip_download: do not actually download the photo
     :param save_json: save photo info as .json file
+    :param naming: naming mode used to create file names (needed for
+        remove_deleted to map local files to photo IDs)
+    :param remove_deleted: remove local files whose photo is no longer on Flickr
+    :param dry_run: with remove_deleted, only report what would be removed
     """
 
     # Use extras parameter to fetch metadata in bulk (reduces per-photo API calls)
@@ -281,7 +308,9 @@ def download_list(
     if metadata_store:
         conn = _get_metadata_db(str(dirname))
 
+    remote_ids: Set[str] = set()
     for photo in photos:
+        remote_ids.add(photo.id)
         do_download_photo(
             dirname,
             pset,
@@ -293,6 +322,15 @@ def download_list(
             save_json,
             metadata_db=conn,
         )
+
+    if remove_deleted:
+        removed = remove_deleted_files(
+            dirname, remote_ids, naming, metadata_db=conn, dry_run=dry_run
+        )
+        if dry_run:
+            logging.info("Dry run: %d file(s) would be removed", removed)
+        else:
+            logging.info("Removed %d file(s)", removed)
 
     if conn:
         conn.close()
@@ -438,9 +476,116 @@ def do_download_photo(
 
     if metadata_db:
         metadata_db.execute(
-            "INSERT INTO downloads VALUES (?, ?, ?)", (photo.id, size_label or "", suffix)
+            "INSERT INTO downloads VALUES (?, ?, ?, ?)",
+            (photo.id, size_label or "", suffix, fname),
         )
         metadata_db.commit()
+
+
+def _filename_to_photo_id(fname: str, naming: Optional[str]) -> Optional[str]:
+    """Extract the photo ID from a local filename, if the naming mode encodes it.
+
+    :param fname: local file name (without directory)
+    :param naming: the naming mode used to create the file
+    :returns: the photo ID, or None if it cannot be determined
+    """
+    base = os.path.splitext(os.path.basename(fname))[0]
+    # Strip a size suffix like " (Medium)" that do_download_photo appends.
+    base = re.sub(r" \([^()]*\)$", "", base)
+    if naming in ("id", "id_and_title"):
+        # File starts with the photo ID ("12345.jpg" or "12345-title.jpg").
+        match = re.match(r"^(\d+)", base)
+        return match.group(1) if match else None
+    if naming == "title_and_id":
+        # File ends with the photo ID ("title-12345.jpg").
+        match = re.search(r"-(\d+)$", base)
+        return match.group(1) if match else None
+    # "title" and "title_increment" do not encode the photo ID.
+    return None
+
+
+def remove_deleted_files(
+    dirname: str,
+    remote_ids: Set[str],
+    naming: Optional[str],
+    metadata_db: Optional[sqlite3.Connection] = None,
+    dry_run: bool = False,
+) -> int:
+    """Remove local files for photos that are no longer on Flickr.
+
+    Photo IDs are resolved from the metadata database when available, and
+    otherwise from the file name (only possible for naming modes that encode
+    the ID: id, id_and_title, title_and_id). Files whose photo ID cannot be
+    determined are left untouched and reported.
+
+    :param dirname: directory to scan for local files
+    :param remote_ids: set of photo IDs currently on Flickr
+    :param naming: the naming mode used to create the files
+    :param metadata_db: optional metadata database to resolve file names and
+        to delete the records of removed photos
+    :param dry_run: only report what would be removed, without deleting
+    :returns: the number of files removed (or that would be removed)
+    """
+    skipped: List[str] = []
+    removed = 0
+    db_ids_to_purge: Set[str] = set()
+    try:
+        names = os.listdir(dirname)
+    except OSError as ex:
+        logging.warning("Could not list %s: %s", dirname, ex)
+        return 0
+
+    for name in sorted(names):
+        path = os.path.join(dirname, name)
+        if not os.path.isfile(path):
+            continue
+        if name == ".metadata.db" or name.endswith(".part"):
+            continue
+
+        photo_id = _filename_to_photo_id(name, naming)
+        if photo_id is None and metadata_db:
+            row = metadata_db.execute(
+                "SELECT photo_id FROM downloads WHERE fname = ?", (path,)
+            ).fetchone()
+            if row:
+                photo_id = row[0]
+
+        if photo_id is None:
+            skipped.append(name)
+            continue
+        if photo_id in remote_ids:
+            continue
+
+        logging.info("Removing %s: photo %s is no longer on Flickr", path, photo_id)
+        if not dry_run:
+            try:
+                os.remove(path)
+            except OSError as ex:
+                logging.error("Could not remove %s: %s", path, ex)
+                continue
+            json_sidecar = path + ".json"
+            if os.path.exists(json_sidecar):
+                logging.info("Removing %s", json_sidecar)
+                try:
+                    os.remove(json_sidecar)
+                except OSError as ex:
+                    logging.error("Could not remove %s: %s", json_sidecar, ex)
+        removed += 1
+        db_ids_to_purge.add(photo_id)
+
+    if metadata_db and db_ids_to_purge and not dry_run:
+        for photo_id in db_ids_to_purge:
+            metadata_db.execute("DELETE FROM downloads WHERE photo_id = ?", (photo_id,))
+        metadata_db.commit()
+
+    if skipped:
+        logging.warning(
+            "Could not determine photo ID for %d file(s) in %s; left untouched: %s",
+            len(skipped),
+            dirname,
+            ", ".join(skipped[:10]) + ("..." if len(skipped) > 10 else ""),
+        )
+    return removed
 
 
 def download_photo(
@@ -485,6 +630,9 @@ def download_user(
     skip_download: bool = False,
     save_json: bool = False,
     metadata_store: Optional[bool] = None,
+    naming: Optional[str] = None,
+    remove_deleted: bool = False,
+    dry_run: bool = False,
 ) -> None:
     """Download all the sets owned by the given user.
 
@@ -493,12 +641,24 @@ def download_user(
     :param size_label: size to download (or None for largest available)
     :param skip_download: do not actually download the photo
     :param save_json: save photo info as .json file
+    :param naming: naming mode used to create file names (needed for
+        remove_deleted to map local files to photo IDs)
+    :param remove_deleted: remove local files whose photo is no longer on Flickr
+    :param dry_run: with remove_deleted, only report what would be removed
     """
     user = find_user(username)
     photosets: Walker[Photoset] = Walker(user.getPhotosets)  # pylint: disable=E1101
     for photoset in photosets:
         download_set(
-            photoset.id, get_filename, size_label, skip_download, save_json, metadata_store
+            photoset.id,
+            get_filename,
+            size_label,
+            skip_download,
+            save_json,
+            metadata_store,
+            naming,
+            remove_deleted,
+            dry_run,
         )
 
 
@@ -509,6 +669,9 @@ def download_user_photos(
     skip_download: bool = False,
     save_json: bool = False,
     metadata_store: Optional[bool] = None,
+    naming: Optional[str] = None,
+    remove_deleted: bool = False,
+    dry_run: bool = False,
 ) -> None:
     """Download all the photos owned by the given user.
 
@@ -517,10 +680,23 @@ def download_user_photos(
     :param size_label: size to download (or None for largest available)
     :param skip_download: do not actually download the photo
     :param save_json: save photo info as .json file
+    :param naming: naming mode used to create file names (needed for
+        remove_deleted to map local files to photo IDs)
+    :param remove_deleted: remove local files whose photo is no longer on Flickr
+    :param dry_run: with remove_deleted, only report what would be removed
     """
     user = find_user(username)
     download_list(
-        user, username, get_filename, size_label, skip_download, save_json, metadata_store
+        user,
+        username,
+        get_filename,
+        size_label,
+        skip_download,
+        save_json,
+        metadata_store,
+        naming,
+        remove_deleted,
+        dry_run,
     )
 
 
@@ -631,6 +807,19 @@ def _get_arg_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Store information about downloads in a metadata file (helps with retrying downloads)",
     )
+    parser.add_argument(
+        "--remove_deleted",
+        action="store_true",
+        help="Remove local files whose photo is no longer on Flickr. Photo IDs are "
+        "resolved from the metadata store (use with --metadata_store) or from file "
+        "names (naming modes id, id_and_title, title_and_id). Other files are left "
+        "untouched and reported",
+    )
+    parser.add_argument(
+        "--dry_run",
+        action="store_true",
+        help="With --remove_deleted, only report which files would be removed",
+    )
     parser.add_argument("-v", "--verbose", action="store_true", help="Turns on verbose logging")
     parser.add_argument(
         "--version",
@@ -688,6 +877,9 @@ def main() -> int:
     if args.download or args.download_user or args.download_user_photos or args.download_photo:
         try:
             get_filename = get_filename_handler(args.naming)
+            if args.remove_deleted:
+                extra = " (dry run)" if args.dry_run else ""
+                logging.info("Will remove local files deleted on Flickr%s", extra)
             if args.download:
                 download_set(
                     args.download,
@@ -696,6 +888,9 @@ def main() -> int:
                     args.skip_download,
                     args.save_json,
                     args.metadata_store,
+                    args.naming,
+                    args.remove_deleted,
+                    args.dry_run,
                 )
             elif args.download_user:
                 download_user(
@@ -705,6 +900,9 @@ def main() -> int:
                     args.skip_download,
                     args.save_json,
                     args.metadata_store,
+                    args.naming,
+                    args.remove_deleted,
+                    args.dry_run,
                 )
             elif args.download_photo:
                 download_photo(
@@ -722,6 +920,9 @@ def main() -> int:
                     args.skip_download,
                     args.save_json,
                     args.metadata_store,
+                    args.naming,
+                    args.remove_deleted,
+                    args.dry_run,
                 )
         except KeyboardInterrupt:
             print(

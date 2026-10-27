@@ -377,14 +377,14 @@ class TestMetadataDb:
 
             # Insert and retrieve data to verify schema
             conn.execute(
-                "INSERT INTO downloads VALUES (?, ?, ?)",
-                ("photo123", "Original", " (Original)"),
+                "INSERT INTO downloads VALUES (?, ?, ?, ?)",
+                ("photo123", "Original", " (Original)", "photo123.jpg"),
             )
             conn.commit()
 
             cursor = conn.execute("SELECT * FROM downloads")
             row = cursor.fetchone()
-            assert row == ("photo123", "Original", " (Original)")
+            assert row == ("photo123", "Original", " (Original)", "photo123.jpg")
 
             conn.close()
 
@@ -398,8 +398,8 @@ class TestDoDownloadPhoto:
             # Set up metadata db with existing download
             conn = _get_metadata_db(tmpdir)
             conn.execute(
-                "INSERT INTO downloads VALUES (?, ?, ?)",
-                ("123", "Original", " (Original)"),
+                "INSERT INTO downloads VALUES (?, ?, ?, ?)",
+                ("123", "Original", " (Original)", "Test Photo.jpg"),
             )
             conn.commit()
 
@@ -610,7 +610,7 @@ class TestDoDownloadPhoto:
             # Verify recorded in db
             cursor = conn.execute("SELECT * FROM downloads WHERE photo_id = ?", ("456",))
             row = cursor.fetchone()
-            assert row == ("456", "Large", " (Large)")
+            assert row == ("456", "Large", " (Large)", str(target_file))
             conn.close()
 
     def test_skip_download_flag(self) -> None:
