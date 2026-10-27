@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
 import flickr_api as Flickr
+import requests
 import yaml
 from flickr_api.flickrerrors import FlickrAPIError, FlickrError
 from flickr_api.objects import Person, Photo, Photoset, Walker
@@ -38,6 +39,28 @@ from flickr_download.utils import (
 
 CONFIG_FILE = "~/.flickr_download"
 OAUTH_TOKEN_FILE = "~/.flickr_token"
+
+# Extras to fetch in bulk API calls for optimization (reduces per-photo API calls)
+# See: https://www.flickr.com/services/api/flickr.photosets.getPhotos.html
+EXTRAS_FOR_BULK_FETCH = (
+    "url_o,url_k,url_h,url_b,url_c,url_z,url_m,url_s,original_format,date_taken,media"
+)
+
+# Mapping from size labels to extras URL keys, matching Flickr's documented
+# label <-> suffix pairs (Large 1024 -> _b, Large 1600 -> _h, X-Large 2048 -> _k)
+SIZE_TO_URL_KEY: Dict[str, str] = {
+    "Original": "url_o",
+    "X-Large 2048": "url_k",
+    "Large 1600": "url_h",
+    "Large": "url_b",
+    "Medium 800": "url_c",
+    "Medium 640": "url_z",
+    "Medium": "url_m",
+    "Small": "url_s",
+}
+
+# All URL keys in descending size order for fallback
+URL_KEYS_BY_SIZE = ["url_o", "url_k", "url_h", "url_b", "url_c", "url_z", "url_m", "url_s"]
 
 
 def _init(key: str, secret: str, oauth: bool) -> bool:
@@ -123,6 +146,66 @@ def _check_file_exists_by_id(dirname: str, photo_id: str) -> Optional[str]:
     return None
 
 
+def _get_url_from_extras(photo: Photo, size_label: Optional[str]) -> Optional[str]:
+    """Get the best available URL from photo extras data.
+
+    :param photo: photo object with extras data
+    :param size_label: requested size label (or None for largest)
+    :returns: URL string or None if not available in extras
+    """
+    if size_label:
+        # Try to get the specific size requested
+        url_key = SIZE_TO_URL_KEY.get(size_label)
+        if url_key:
+            url = photo.get(url_key)
+            if url:
+                return str(url)
+    else:
+        # No specific size requested, find largest available
+        for url_key in URL_KEYS_BY_SIZE:
+            url = photo.get(url_key)
+            if url:
+                return str(url)
+    return None
+
+
+def _get_extension_from_url(url: str) -> str:
+    """Extract file extension from URL.
+
+    :param url: URL string
+    :returns: extension including dot (e.g., '.jpg')
+    """
+    # Remove query string if present
+    path = url.split("?")[0]
+    # Get extension from path
+    ext = os.path.splitext(path)[1]
+    return ext if ext else ".jpg"
+
+
+def _download_file(url: str, fname: str) -> None:
+    """Download a file directly from URL.
+
+    :param url: URL to download from
+    :param fname: local filename to save to
+    :raises IOError: on download failure
+    """
+    # Download to a temporary file first and only rename on success, so a
+    # mid-stream failure does not leave a partial file behind that a later
+    # resume run would mistake for a completed download.
+    tmp_fname = fname + ".part"
+    try:
+        response = requests.get(url, stream=True, timeout=60)
+        response.raise_for_status()
+        with open(tmp_fname, "wb") as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                f.write(chunk)
+        os.rename(tmp_fname, fname)
+    except Exception:
+        if os.path.exists(tmp_fname):
+            os.remove(tmp_fname)
+        raise
+
+
 def _get_metadata_db(dirname: str) -> sqlite3.Connection:
     conn = sqlite3.connect(Path(dirname) / ".metadata.db")
     conn.execute(
@@ -172,7 +255,9 @@ def download_list(
     :param save_json: save photo info as .json file
     """
 
-    photos: Walker[Photo] = Walker(pset.getPhotos)
+    # Use extras parameter to fetch metadata in bulk (reduces per-photo API calls)
+    # This fetches URLs, original format, date taken, etc. in the initial paginated call
+    photos: Walker[Photo] = Walker(pset.getPhotos, extras=EXTRAS_FOR_BULK_FETCH)
 
     suffix = f" ({size_label})" if size_label else ""
 
@@ -258,13 +343,22 @@ def do_download_photo(
         # Found existing file and not saving JSON, can skip entirely
         logging.info("Skipping %s, as it exists already (local-first check)", existing_file)
         return
+    # Try to get URL from extras first (avoids API call for file extension)
+    prefetched_url = _get_url_from_extras(photo, size_label)
 
     fname = get_full_path(dirname, get_filename(pset, photo, suffix))
-    try:
-        fname = photo._getOutputFilename(fname, size_label)
-    except (OSError, FlickrError) as ex:
-        logging.error("Error getting photo info for %s: %s", photo.id, ex)
-        return
+    if prefetched_url:
+        # We can determine extension from URL without an API call
+        ext = _get_extension_from_url(prefetched_url)
+        fname = fname + ext
+        logging.debug("Using extension %s from pre-fetched URL for %s", ext, photo.id)
+    else:
+        # Fall back to API call to get filename/extension
+        try:
+            fname = photo._getOutputFilename(fname, size_label)
+        except (OSError, FlickrError) as ex:
+            logging.error("Error getting photo info for %s: %s", photo.id, ex)
+            return
     json_fname = fname + ".json"
 
     if not photo["loaded"]:
@@ -296,7 +390,9 @@ def do_download_photo(
         except Exception:
             logging.warning("Trouble saving photo info: %s", sys.exc_info())
 
-    if not size_label:
+    if not size_label and not prefetched_url:
+        # Only check size label if we don't have a pre-fetched URL
+        # (pre-fetched URL means we already have a valid download URL)
         try:
             largest_size = photo._getLargestSizeLabel()
         except (OSError, FlickrError) as ex:
@@ -319,12 +415,22 @@ def do_download_photo(
             return
 
         try:
-            photo.save(fname, size_label)
+            # Use pre-fetched URL if available (avoids additional API calls)
+            if prefetched_url:
+                logging.debug("Using pre-fetched URL for %s", photo.id)
+                _download_file(prefetched_url, fname)
+            else:
+                # Fall back to standard save method (makes additional API calls)
+                logging.debug("Falling back to standard save for %s", photo.id)
+                photo.save(fname, size_label)
         except IOError as ex:
-            logging.error("IO error saving photo: %s", ex)
+            logging.error("IO error saving photo %s: %s", fname, ex)
             return
         except FlickrError as ex:
-            logging.error("Flickr error saving photo: %s", ex)
+            logging.error("Flickr error saving photo %s: %s", fname, ex)
+            return
+        except requests.RequestException as ex:
+            logging.error("Network error saving photo %s: %s", fname, ex)
             return
 
         # Set file times to when the photo was taken
