@@ -3,9 +3,11 @@
 
 import argparse
 import errno
+import glob
 import json
 import logging
 import os
+import re
 import sqlite3
 import sys
 from pathlib import Path
@@ -114,6 +116,34 @@ def _load_defaults() -> Dict[str, Any]:
             logging.debug("No config file")
 
     return {}
+
+
+def _check_file_exists_by_id(dirname: str, photo_id: str) -> Optional[str]:
+    """Check if a file for a given photo ID already exists in the directory.
+
+    This allows fast local-first checking without API calls when using
+    ID-based naming (id, id_and_title, title_and_id).
+
+    :param dirname: directory to check
+    :param photo_id: the photo ID to look for
+    :returns: path to existing file if found, None otherwise
+    """
+    # Check for files that start with the photo ID (for id and id_and_title naming).
+    # Require the character after the ID to be non-numeric or end-of-name, so
+    # photo "12345" does not match "123456.jpg" belonging to a different photo.
+    id_prefix_re = re.compile(rf"{re.escape(str(photo_id))}(?:[^0-9].*)?$")
+    for name in os.listdir(dirname):
+        if id_prefix_re.match(name):
+            return os.path.join(dirname, name)
+
+    # Also check for files that contain the photo ID (for title_and_id naming)
+    # This is more expensive so only do it if the first pattern didn't match
+    pattern = os.path.join(dirname, f"*-{photo_id}.*")
+    matches = glob.glob(pattern)
+    if matches:
+        return matches[0]
+
+    return None
 
 
 def _get_url_from_extras(photo: Photo, size_label: Optional[str]) -> Optional[str]:
@@ -292,6 +322,7 @@ def do_download_photo(
     :param metadata_db: optional metadata database to record downloads
         in
     """
+    # 1. Local-first check: metadata DB (no API call)
     if metadata_db:
         if metadata_db.execute(
             "SELECT * FROM downloads WHERE photo_id = ? AND size_label = ? AND suffix = ?",
@@ -300,6 +331,18 @@ def do_download_photo(
             logging.info("Skipping download of already downloaded photo with ID: %s", photo.id)
             return
 
+    # 2. Local-first check: file exists by ID pattern (no API call)
+    # This helps with resuming large downloads without needing metadata_db.
+    # Only done when no specific size/suffix is requested: the file name does
+    # not reliably encode the size, so a previously downloaded Original would
+    # wrongly make a later `--size "Medium 640"` run skip the photo.
+    existing_file = (
+        _check_file_exists_by_id(dirname, photo.id) if not size_label and not suffix else None
+    )
+    if existing_file and not save_json:
+        # Found existing file and not saving JSON, can skip entirely
+        logging.info("Skipping %s, as it exists already (local-first check)", existing_file)
+        return
     # Try to get URL from extras first (avoids API call for file extension)
     prefetched_url = _get_url_from_extras(photo, size_label)
 

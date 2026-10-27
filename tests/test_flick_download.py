@@ -10,6 +10,7 @@ import requests.exceptions
 from flickr_api.flickrerrors import FlickrAPIError, FlickrError
 
 from flickr_download.flick_download import (
+    _check_file_exists_by_id,
     _download_file,
     _get_extension_from_url,
     _get_metadata_db,
@@ -19,6 +20,72 @@ from flickr_download.flick_download import (
     download_list,
     find_user,
 )
+
+
+class TestCheckFileExistsById:
+    """Tests for _check_file_exists_by_id function."""
+
+    def test_finds_file_starting_with_id(self) -> None:
+        """Finds file that starts with photo ID (id naming)."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create file starting with ID
+            Path(tmpdir, "12345.jpg").touch()
+
+            result = _check_file_exists_by_id(tmpdir, "12345")
+            assert result is not None
+            assert "12345" in result
+
+    def test_finds_file_with_id_and_title(self) -> None:
+        """Finds file with ID at start (id_and_title naming)."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create file with ID-title pattern
+            Path(tmpdir, "12345-My Photo.jpg").touch()
+
+            result = _check_file_exists_by_id(tmpdir, "12345")
+            assert result is not None
+            assert "12345" in result
+
+    def test_finds_file_with_title_and_id(self) -> None:
+        """Finds file with ID at end (title_and_id naming)."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create file with title-ID pattern
+            Path(tmpdir, "My Photo-12345.jpg").touch()
+
+            result = _check_file_exists_by_id(tmpdir, "12345")
+            assert result is not None
+            assert "12345" in result
+
+    def test_does_not_match_sibling_id(self) -> None:
+        """Does not match a longer ID that starts with the photo ID."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Only a file for photo 123456 exists, we are looking for 12345
+            Path(tmpdir, "123456.jpg").touch()
+
+            result = _check_file_exists_by_id(tmpdir, "12345")
+            assert result is None
+
+    def test_matches_id_followed_by_separator(self) -> None:
+        """Matches file where the ID is followed by a separator or extension."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            Path(tmpdir, "12345.jpg").touch()
+            Path(tmpdir, "12345-My Photo.jpg").touch()
+
+            assert _check_file_exists_by_id(tmpdir, "12345") is not None
+
+    def test_returns_none_when_no_match(self) -> None:
+        """Returns None when no file matches photo ID."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create file with different ID
+            Path(tmpdir, "99999.jpg").touch()
+
+            result = _check_file_exists_by_id(tmpdir, "12345")
+            assert result is None
+
+    def test_returns_none_for_empty_directory(self) -> None:
+        """Returns None for empty directory."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            result = _check_file_exists_by_id(tmpdir, "12345")
+            assert result is None
 
 
 class TestGetUrlFromExtras:
@@ -357,6 +424,77 @@ class TestDoDownloadPhoto:
 
             mock_photo.save.assert_not_called()
             conn.close()
+
+    def test_skip_existing_file_by_id_pattern(self) -> None:
+        """do_download_photo skips if file exists matching photo ID (local-first check)."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create existing file matching photo ID
+            existing_file = Path(tmpdir) / "12345-Some Title.jpg"
+            existing_file.touch()
+
+            mock_photo = Mock()
+            mock_photo.id = "12345"
+            mock_photo.title = "Different Title"
+            mock_photo.save = Mock()
+            mock_photo._getOutputFilename = Mock()  # Should not be called
+
+            mock_pset = Mock()
+            mock_pset.title = "Test Set"
+
+            def mock_get_filename(pset: object, photo: object, suffix: Optional[str]) -> str:
+                return "Different Title"
+
+            do_download_photo(
+                tmpdir,
+                mock_pset,
+                mock_photo,
+                None,
+                "",
+                mock_get_filename,
+            )
+
+            # Should skip due to local-first check - no API calls made
+            mock_photo.save.assert_not_called()
+            mock_photo._getOutputFilename.assert_not_called()
+
+    @patch("flickr_download.flick_download.set_file_time")
+    def test_no_local_first_skip_when_size_label_set(self, mock_set_file_time: Mock) -> None:
+        """do_download_photo does not local-first-skip when a size is requested.
+
+        The file name does not encode the size, so a previously downloaded
+        Original must not make a later `--size` run skip the photo.
+        """
+        with tempfile.TemporaryDirectory() as tmpdir:
+            Path(tmpdir, "12345.jpg").touch()
+
+            mock_photo = Mock()
+            mock_photo.id = "12345"
+            mock_photo.title = "Test Photo"
+            mock_photo.__getitem__ = Mock(
+                side_effect=lambda k: {"loaded": True, "taken": "2020-01-01 12:00:00"}.get(k)
+            )
+            target_file = Path(tmpdir) / "Test Photo.jpg"
+            mock_photo._getOutputFilename = Mock(return_value=str(target_file))
+            mock_photo._getLargestSizeLabel = Mock(return_value="Original")
+            mock_photo.save = Mock()
+            mock_photo.get = Mock(return_value=None)
+
+            mock_pset = Mock()
+            mock_pset.title = "Test Set"
+
+            def mock_get_filename(pset: object, photo: object, suffix: Optional[str]) -> str:
+                return "Test Photo"
+
+            do_download_photo(
+                tmpdir,
+                mock_pset,
+                mock_photo,
+                "Large",
+                " (Large)",
+                mock_get_filename,
+            )
+
+            mock_photo.save.assert_called_once()
 
     def test_skip_existing_file(self) -> None:
         """do_download_photo skips if file already exists."""
