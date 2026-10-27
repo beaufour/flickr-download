@@ -27,23 +27,11 @@ repos:
       - id: ruff
         args: [--fix]
       - id: ruff-format
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.19.1
+  - repo: local
     hooks:
       - id: mypy
-        additional_dependencies:
-          - types-PyYAML
-          - types-python-dateutil
-          - types-requests
-# Disabling this too because it also fails on Github. Sigh.
-# - repo: https://github.com/PyCQA/docformatter
-#   rev: v1.7.5
-#   hooks:
-#     - id: docformatter
-# Disable interrogate until the version gets upgraded so it doesn't fail on GH...
-#  - repo: https://github.com/econchick/interrogate
-#    rev: 1.5.0
-#    hooks:
-#      - id: interrogate
-#        args: ["--config=pyproject.toml"]
-#        pass_filenames: false
+        name: mypy
+        entry: uv run mypy flickr_download
+        language: system
+        types: [python]
+        pass_filenames: false

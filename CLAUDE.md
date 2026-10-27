@@ -8,6 +8,8 @@ Flickr Download is a command-line utility for downloading photos from Flickr. It
 
 ## Development Commands
 
+Use Python 3.11 or newer for pre-commit tooling. The application and tests still support Python 3.10.
+
 ```bash
 # Install dependencies
 uv sync --all-extras
