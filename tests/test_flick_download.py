@@ -52,6 +52,23 @@ class TestCheckFileExistsById:
             assert result is not None
             assert "12345" in result
 
+    def test_does_not_match_sibling_id(self) -> None:
+        """Does not match a longer ID that starts with the photo ID."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Only a file for photo 123456 exists, we are looking for 12345
+            Path(tmpdir, "123456.jpg").touch()
+
+            result = _check_file_exists_by_id(tmpdir, "12345")
+            assert result is None
+
+    def test_matches_id_followed_by_separator(self) -> None:
+        """Matches file where the ID is followed by a separator or extension."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            Path(tmpdir, "12345.jpg").touch()
+            Path(tmpdir, "12345-My Photo.jpg").touch()
+
+            assert _check_file_exists_by_id(tmpdir, "12345") is not None
+
     def test_returns_none_when_no_match(self) -> None:
         """Returns None when no file matches photo ID."""
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -271,6 +288,45 @@ class TestDoDownloadPhoto:
             # Should skip due to local-first check - no API calls made
             mock_photo.save.assert_not_called()
             mock_photo._getOutputFilename.assert_not_called()
+
+    @patch("flickr_download.flick_download.set_file_time")
+    def test_no_local_first_skip_when_size_label_set(self, mock_set_file_time: Mock) -> None:
+        """do_download_photo does not local-first-skip when a size is requested.
+
+        The file name does not encode the size, so a previously downloaded
+        Original must not make a later `--size` run skip the photo.
+        """
+        with tempfile.TemporaryDirectory() as tmpdir:
+            Path(tmpdir, "12345.jpg").touch()
+
+            mock_photo = Mock()
+            mock_photo.id = "12345"
+            mock_photo.title = "Test Photo"
+            mock_photo.__getitem__ = Mock(
+                side_effect=lambda k: {"loaded": True, "taken": "2020-01-01 12:00:00"}.get(k)
+            )
+            target_file = Path(tmpdir) / "Test Photo.jpg"
+            mock_photo._getOutputFilename = Mock(return_value=str(target_file))
+            mock_photo._getLargestSizeLabel = Mock(return_value="Original")
+            mock_photo.save = Mock()
+            mock_photo.get = Mock(return_value=None)
+
+            mock_pset = Mock()
+            mock_pset.title = "Test Set"
+
+            def mock_get_filename(pset: object, photo: object, suffix: Optional[str]) -> str:
+                return "Test Photo"
+
+            do_download_photo(
+                tmpdir,
+                mock_pset,
+                mock_photo,
+                "Large",
+                " (Large)",
+                mock_get_filename,
+            )
+
+            mock_photo.save.assert_called_once()
 
     def test_skip_existing_file(self) -> None:
         """do_download_photo skips if file already exists."""
