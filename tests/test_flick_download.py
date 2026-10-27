@@ -28,11 +28,24 @@ class TestGetUrlFromExtras:
         """Returns URL for specific size label."""
         mock_photo = Mock()
         mock_photo.get = Mock(
-            side_effect=lambda k: {"url_l": "https://example.com/large.jpg"}.get(k)
+            side_effect=lambda k: {"url_b": "https://example.com/large.jpg"}.get(k)
         )
 
         result = _get_url_from_extras(mock_photo, "Large")
         assert result == "https://example.com/large.jpg"
+
+    def test_large_maps_to_url_b(self) -> None:
+        """'Large' (1024px) maps to url_b, not url_l (which is Large 1600)."""
+        mock_photo = Mock()
+        mock_photo.get = Mock(
+            side_effect=lambda k: {
+                "url_b": "https://example.com/1024.jpg",
+                "url_h": "https://example.com/1600.jpg",
+            }.get(k)
+        )
+
+        assert _get_url_from_extras(mock_photo, "Large") == "https://example.com/1024.jpg"
+        assert _get_url_from_extras(mock_photo, "Large 1600") == "https://example.com/1600.jpg"
 
     def test_get_url_largest_available(self) -> None:
         """Returns largest available URL when no size specified."""
@@ -123,6 +136,32 @@ class TestDownloadFile:
                 assert f.read() == b"test content"
         finally:
             Path(fname).unlink(missing_ok=True)
+            Path(fname + ".part").unlink(missing_ok=True)
+
+    @patch("flickr_download.flick_download.requests.get")
+    def test_removes_partial_file_on_mid_stream_failure(self, mock_get: Mock) -> None:
+        """Removes the partial file when the download fails mid-stream."""
+        import requests
+
+        mock_response = Mock()
+        mock_response.raise_for_status = Mock()
+        mock_response.iter_content = Mock(
+            side_effect=requests.exceptions.ChunkedEncodingError("connection broken")
+        )
+        mock_get.return_value = mock_response
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            fname = str(Path(tmpdir) / "photo.jpg")
+
+            try:
+                _download_file("https://example.com/photo.jpg", fname)
+                assert False, "Expected ChunkedEncodingError"
+            except requests.exceptions.ChunkedEncodingError:
+                pass  # Expected
+
+            # No partial file should be left behind
+            assert not os.path.exists(fname)
+            assert not os.path.exists(fname + ".part")
 
     @patch("flickr_download.flick_download.requests.get")
     def test_raises_on_http_error(self, mock_get: Mock) -> None:
@@ -144,6 +183,7 @@ class TestDownloadFile:
                 pass  # Expected
         finally:
             Path(fname).unlink(missing_ok=True)
+            Path(fname + ".part").unlink(missing_ok=True)
 
 
 class TestFindUser:

@@ -40,12 +40,17 @@ OAUTH_TOKEN_FILE = "~/.flickr_token"
 
 # Extras to fetch in bulk API calls for optimization (reduces per-photo API calls)
 # See: https://www.flickr.com/services/api/flickr.photosets.getPhotos.html
-EXTRAS_FOR_BULK_FETCH = "url_o,url_l,url_c,url_z,url_m,url_s,original_format,date_taken,media"
+EXTRAS_FOR_BULK_FETCH = (
+    "url_o,url_k,url_h,url_b,url_c,url_z,url_m,url_s,original_format,date_taken,media"
+)
 
-# Mapping from size labels to extras URL keys (in preference order for fallback)
+# Mapping from size labels to extras URL keys, matching Flickr's documented
+# label <-> suffix pairs (Large 1024 -> _b, Large 1600 -> _h, X-Large 2048 -> _k)
 SIZE_TO_URL_KEY: Dict[str, str] = {
     "Original": "url_o",
-    "Large": "url_l",
+    "X-Large 2048": "url_k",
+    "Large 1600": "url_h",
+    "Large": "url_b",
     "Medium 800": "url_c",
     "Medium 640": "url_z",
     "Medium": "url_m",
@@ -53,7 +58,7 @@ SIZE_TO_URL_KEY: Dict[str, str] = {
 }
 
 # All URL keys in descending size order for fallback
-URL_KEYS_BY_SIZE = ["url_o", "url_l", "url_c", "url_z", "url_m", "url_s"]
+URL_KEYS_BY_SIZE = ["url_o", "url_k", "url_h", "url_b", "url_c", "url_z", "url_m", "url_s"]
 
 
 def _init(key: str, secret: str, oauth: bool) -> bool:
@@ -154,12 +159,21 @@ def _download_file(url: str, fname: str) -> None:
     :param fname: local filename to save to
     :raises IOError: on download failure
     """
-    response = requests.get(url, stream=True, timeout=60)
-    response.raise_for_status()
-
-    with open(fname, "wb") as f:
-        for chunk in response.iter_content(chunk_size=8192):
-            f.write(chunk)
+    # Download to a temporary file first and only rename on success, so a
+    # mid-stream failure does not leave a partial file behind that a later
+    # resume run would mistake for a completed download.
+    tmp_fname = fname + ".part"
+    try:
+        response = requests.get(url, stream=True, timeout=60)
+        response.raise_for_status()
+        with open(tmp_fname, "wb") as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                f.write(chunk)
+        os.rename(tmp_fname, fname)
+    except Exception:
+        if os.path.exists(tmp_fname):
+            os.remove(tmp_fname)
+        raise
 
 
 def _get_metadata_db(dirname: str) -> sqlite3.Connection:
