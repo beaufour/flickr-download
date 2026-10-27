@@ -5,6 +5,10 @@ This ensures that all the dependencies actually load too.
 
 from unittest.mock import Mock, patch
 
+import pytest
+
+from flickr_api.flickrerrors import FlickrError
+
 from flickr_download.flick_download import main
 
 
@@ -96,3 +100,64 @@ def test_main_init_failure(mock_init: Mock) -> None:
         result = main()
 
     assert result == 1
+
+
+@patch("flickr_download.flick_download._init")
+@patch("flickr_download.flick_download.download_set", side_effect=KeyboardInterrupt)
+def test_main_keyboard_interrupt(mock_download: Mock, _mock_init: Mock, capsys) -> None:
+    """Main handles Ctrl-C gracefully and returns 0."""
+    with (
+        patch("sys.argv", ["flickr_download", "-k", "key", "-s", "secret", "-d", "12345"]),
+        patch("flickr_download.flick_download._load_defaults", return_value={}),
+    ):
+        result = main()
+
+    assert result == 0
+    assert "Forcefully aborting" in capsys.readouterr().err
+
+
+@patch("flickr_download.flick_download.save_cache")
+@patch("flickr_download.flick_download.init_cache")
+@patch("flickr_download.flick_download._init")
+@patch("flickr_download.flick_download.download_set", side_effect=FlickrError("boom"))
+def test_main_saves_cache_on_error(
+    _mock_download: Mock, _mock_init: Mock, mock_init_cache: Mock, mock_save: Mock
+) -> None:
+    """Main saves the cache before re-raising an unexpected error."""
+    cache = Mock()
+    mock_init_cache.return_value = cache
+
+    with (
+        patch(
+            "sys.argv",
+            ["flickr_download", "-k", "key", "-s", "secret", "-d", "12345", "-c", "cache.pkl"],
+        ),
+        patch("flickr_download.flick_download._load_defaults", return_value={}),
+        pytest.raises(FlickrError),
+    ):
+        main()
+
+    mock_save.assert_called_once_with("cache.pkl", cache)
+
+
+@patch("flickr_download.flick_download.save_cache")
+@patch("flickr_download.flick_download.init_cache")
+@patch("flickr_download.flick_download._init")
+@patch("flickr_download.flick_download.download_set")
+def test_main_saves_cache_on_success(
+    _mock_download: Mock, _mock_init: Mock, mock_init_cache: Mock, mock_save: Mock
+) -> None:
+    """Main saves the cache after a successful download."""
+    cache = Mock()
+    mock_init_cache.return_value = cache
+
+    with (
+        patch(
+            "sys.argv",
+            ["flickr_download", "-k", "key", "-s", "secret", "-d", "12345", "-c", "cache.pkl"],
+        ),
+        patch("flickr_download.flick_download._load_defaults", return_value={}),
+    ):
+        assert main() == 0
+
+    mock_save.assert_called_once_with("cache.pkl", cache)

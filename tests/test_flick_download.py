@@ -1,11 +1,13 @@
 """Tests for flickr_download.flick_download module."""
 
+import errno
 import os
 import tempfile
 from pathlib import Path
 from typing import Optional
 from unittest.mock import Mock, patch
 
+import pytest
 import requests.exceptions
 from flickr_api.flickrerrors import FlickrAPIError, FlickrError
 
@@ -15,6 +17,7 @@ from flickr_download.flick_download import (
     _get_extension_from_url,
     _get_metadata_db,
     _get_url_from_extras,
+    _init,
     _load_defaults,
     do_download_photo,
     download_list,
@@ -1052,3 +1055,97 @@ class TestDoDownloadPhotoErrorHandling:
                 mock_get_filename,
                 save_json=True,
             )
+
+
+class TestInit:
+    """Tests for _init (API initialization and OAuth handling)."""
+
+    @patch("flickr_download.flick_download.Flickr")
+    def test_init_no_oauth(self, mock_flickr: Mock) -> None:
+        """_init without oauth just sets keys and returns True."""
+        assert _init("key", "secret", False) is True
+        mock_flickr.set_keys.assert_called_once_with("key", "secret")
+        mock_flickr.set_auth_handler.assert_not_called()
+
+    @patch("flickr_download.flick_download.Flickr")
+    @patch("flickr_download.flick_download.os.path.exists", return_value=True)
+    def test_init_existing_token(self, _mock_exists: Mock, mock_flickr: Mock) -> None:
+        """_init loads the saved OAuth token when the token file exists."""
+        assert _init("key", "secret", True) is True
+        mock_flickr.set_keys.assert_called_once_with("key", "secret")
+        mock_flickr.set_auth_handler.assert_called_once()
+
+    @patch("builtins.input", return_value="verifier123")
+    @patch("flickr_download.flick_download.Flickr")
+    @patch("flickr_download.flick_download.os.path.exists", return_value=False)
+    def test_init_new_token_prompts_for_verifier(
+        self, _mock_exists: Mock, mock_flickr: Mock, mock_input: Mock
+    ) -> None:
+        """_init walks the interactive OAuth flow when no token exists yet."""
+        mock_auth = mock_flickr.auth.AuthHandler.return_value
+
+        result = _init("key", "secret", True)
+
+        assert result is False
+        mock_flickr.auth.AuthHandler.assert_called_once_with()
+        mock_auth.get_authorization_url.assert_called_once_with("read")
+        mock_flickr.set_auth_handler.assert_called_once_with(mock_auth)
+        mock_auth.set_verifier.assert_called_once_with("verifier123")
+        mock_auth.save.assert_called_once()
+        mock_input.assert_called_once()
+
+
+class TestLoadDefaultsErrorHandling:
+    """Tests for _load_defaults error branches."""
+
+    def test_load_defaults_unreadable_file(self) -> None:
+        """_load_defaults warns and returns empty dict when file is unreadable."""
+        with patch("builtins.open", side_effect=PermissionError(errno.EACCES, "denied")):
+            assert _load_defaults() == {}
+
+
+class TestDownloadListLongDirname:
+    """Tests for the ENAMETOOLONG fallback in download_list."""
+
+    @patch("flickr_download.flick_download.get_dirname", return_value="x" * 300)
+    @patch("flickr_download.flick_download.os.mkdir")
+    @patch("flickr_download.flick_download.Walker")
+    @patch("flickr_download.flick_download.do_download_photo")
+    def test_truncates_too_long_dirname(
+        self,
+        mock_do_download: Mock,
+        mock_walker: Mock,
+        mock_mkdir: Mock,
+        _mock_get_dirname: Mock,
+    ) -> None:
+        """download_list retries with a 200-char truncated dirname on ENAMETOOLONG."""
+        mock_walker.return_value = iter([])
+        mock_mkdir.side_effect = [OSError(errno.ENAMETOOLONG, "name too long"), None]
+
+        download_list(Mock(), "x" * 300, lambda pset, photo, suffix: "f", None)
+
+        assert mock_mkdir.call_count == 2
+        truncated = mock_mkdir.call_args_list[1][0][0]
+        assert len(truncated) == 200
+        mock_do_download.assert_not_called()
+
+    @patch("flickr_download.flick_download.get_dirname", return_value="x" * 300)
+    @patch("flickr_download.flick_download.os.mkdir")
+    @patch("flickr_download.flick_download.Walker")
+    @patch("flickr_download.flick_download.do_download_photo")
+    def test_reraises_other_os_errors(
+        self,
+        mock_do_download: Mock,
+        mock_walker: Mock,
+        mock_mkdir: Mock,
+        _mock_get_dirname: Mock,
+    ) -> None:
+        """download_list re-raises OSError that is not ENAMETOOLONG."""
+        mock_walker.return_value = iter([])
+        mock_mkdir.side_effect = OSError(errno.EACCES, "permission denied")
+
+        with pytest.raises(OSError):
+            download_list(Mock(), "x" * 300, lambda pset, photo, suffix: "f", None)
+
+        mock_mkdir.assert_called_once()
+        mock_do_download.assert_not_called()

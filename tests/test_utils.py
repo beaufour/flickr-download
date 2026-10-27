@@ -8,6 +8,7 @@ import pytest
 from flickr_api.objects import Person, Tag
 from flickr_download.utils import (
     get_cache,
+    init_cache,
     get_dirname,
     get_filename,
     get_full_path,
@@ -148,3 +149,40 @@ def test_get_photo_page_no_photopage_type() -> None:
 
     result = get_photo_page(mock_photo)
     assert result == ""
+
+
+def test_init_cache_installs_signal_handler() -> None:
+    """init_cache enables the cache and registers a SIGINT handler that saves it."""
+    with (
+        patch("flickr_download.utils.Flickr") as mock_flickr,
+        patch("flickr_download.utils.signal.signal") as mock_signal,
+        patch("flickr_download.utils.save_cache", return_value=True) as mock_save,
+        patch("flickr_download.utils.sys.exit", side_effect=SystemExit) as mock_exit,
+    ):
+        cache = init_cache("/nonexistent/path/cache.pkl")
+
+        mock_flickr.enable_cache.assert_called_once_with(cache)
+        mock_signal.assert_called_once()
+        sig, handler = mock_signal.call_args[0]
+
+        with pytest.raises(SystemExit):
+            handler(sig, None)
+
+        mock_save.assert_called_once_with("/nonexistent/path/cache.pkl", cache)
+        mock_exit.assert_called_once_with(sig)
+
+
+def test_get_filename_altsep() -> None:
+    """get_filename also sanitizes alternate path separators when present."""
+    with patch("os.path.altsep", "\\"):
+        assert get_filename("a\\b.jpg") == "a_b.jpg"
+
+
+def test_set_file_time_overflow_error_handled() -> None:
+    """set_file_time skips os.utime when the timestamp overflows."""
+    with (
+        patch("os.utime") as mocked,
+        patch("flickr_download.utils.time.mktime", side_effect=OverflowError),
+    ):
+        set_file_time("test_file_delete", "2020-03-05 08:00:00")
+        mocked.assert_not_called()
