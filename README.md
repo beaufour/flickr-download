@@ -120,6 +120,19 @@ So to download all the sets for a given user `XXX`, including private photos and
 
     > flickr_download -k KEY -s SECRET --user_auth --cache api_cache --metadata_store --download_user XXX
 
+## Removing files deleted on Flickr
+
+To keep your local download in sync with Flickr, `--remove_deleted` removes local files whose photo is no longer available on Flickr. It runs after the download pass, per photo set / user:
+
+* Photo IDs are resolved from the metadata store (`--metadata_store`, which records the file name of each download) or, when not available, from file names created with the `id`, `id_and_title` or `title_and_id` naming modes.
+* Files whose photo ID cannot be determined (e.g. `title` naming without the metadata store) are left untouched and reported.
+* Use `--dry_run` to only report which files would be removed, without deleting anything.
+
+So to download all sets for a user `XXX` and remove local files deleted on Flickr (dry run first is recommended):
+
+    > flickr_download -k KEY -s SECRET --user_auth --cache api_cache --metadata_store --download_user XXX --remove_deleted --dry_run
+    > flickr_download -k KEY -s SECRET --user_auth --cache api_cache --metadata_store --download_user XXX --remove_deleted
+
 ## Command line arguments
 
 Full reference, as shown by `flickr_download --help`:
@@ -142,6 +155,8 @@ Full reference, as shown by `flickr_download --help`:
 | `-j`, `--save_json` | Save photo info like description and tags, one .json file per photo |
 | `-c CACHE_FILE`, `--cache CACHE_FILE` | Cache results in CACHE_FILE (speed things up on large downloads in particular) |
 | `--metadata_store` | Store information about downloads in a metadata file (helps with retrying downloads) |
+| `--remove_deleted` | Remove local files whose photo is no longer on Flickr. Photo IDs are resolved from the metadata store (use with `--metadata_store`) or from file names (naming modes `id`, `id_and_title`, `title_and_id`). Other files are left untouched and reported |
+| `--dry_run` | With `--remove_deleted`, only report which files would be removed |
 | `-v`, `--verbose` | Turns on verbose logging |
 | `--version` | Lists the version of the tool |
 
